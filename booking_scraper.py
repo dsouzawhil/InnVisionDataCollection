@@ -45,6 +45,27 @@ async def perform_search(page):
     await dismiss_popups(page)
 
 
+async def dismiss_popups_fast(page):
+    """Quick popup dismissal with shorter timeouts for speed."""
+    popup_selectors = [
+        'button[aria-label="Dismiss"]',
+        'button[aria-label="Close"]',
+        'button:has-text("Close")',
+        'button:has-text("Got it")',
+        'button:has-text("OK")'
+    ]
+    
+    for selector in popup_selectors:
+        try:
+            popup_button = page.locator(selector).first
+            await popup_button.wait_for(state="visible", timeout=500)  # Very fast timeout
+            await popup_button.click()
+            print(f"👋 Quick dismissed popup: {selector}")
+            return  # Exit after first successful dismissal
+        except:
+            continue
+
+
 async def dismiss_popups(page):
     """Check for and dismiss any popups."""
     popup_selectors = [
@@ -123,35 +144,101 @@ async def find_load_more_button(page):
     return None
 
 
-async def load_more_results(page, max_loads=3):
-    """Load more results by clicking load more button multiple times."""
+async def scroll_and_load_content(page):
+    """Scroll down incrementally to load more content and find load more button."""
+    print("🔄 Starting incremental scroll to load all content...")
+    
+    previous_height = 0
+    scroll_attempts = 0
+    max_scroll_attempts = 20  # Increased limit
+    no_new_content_count = 0
+    
+    while scroll_attempts < max_scroll_attempts:
+        # Get current page height
+        current_height = await page.evaluate("document.body.scrollHeight")
+        
+        # Scroll down incrementally, but ensure we actually scroll to bottom when needed
+        scroll_position = (scroll_attempts + 1) * 1000  # Increased to 1000px increments
+        
+        # Always scroll to bottom to trigger any lazy loading
+        await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+        await page.wait_for_timeout(1500)  # Faster scrolling - reduced from 3000ms
+        
+        # Quick popup check (reduced timeout for speed)
+        await dismiss_popups_fast(page)
+        
+        # Check if new content loaded (page height increased)
+        new_height = await page.evaluate("document.body.scrollHeight")
+        if new_height > current_height:
+            print(f"📈 New content loaded! Height: {current_height} → {new_height}")
+            no_new_content_count = 0  # Reset counter
+        else:
+            no_new_content_count += 1
+            print(f"⏸️ No new content loaded (attempt {no_new_content_count})")
+        
+        # Count current hotel cards
+        current_cards = await page.locator('[data-testid="property-card"]').count()
+        print(f"🏨 Current hotel cards visible: {current_cards}")
+        
+        # Try to find load more button
+        load_more_button = await find_load_more_button(page)
+        if load_more_button:
+            print("✅ Found load more button during scroll!")
+            return load_more_button
+            
+        # Stop if no new content for 2 consecutive attempts (faster)
+        if no_new_content_count >= 2:
+            print("🏁 No new content loading after multiple attempts. Reached end.")
+            break
+            
+        previous_height = new_height
+        scroll_attempts += 1
+        print(f"📍 Scroll attempt {scroll_attempts}/{max_scroll_attempts}")
+    
+    print("🔍 Final check - trying to find load more button one more time...")
+    return await find_load_more_button(page)
+
+
+async def load_more_results(page):
+    """Keep scrolling and clicking load more buttons until no more are found."""
     loads_attempted = 0
     
-    while loads_attempted < max_loads:
+    print("🔄 Starting continuous scroll and load more process...")
+    
+    while True:
         try:
-            # Scroll down to see more content
-            await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-            await page.wait_for_timeout(1000)
+            print(f"\n🔍 Searching for load more button (attempt {loads_attempted + 1})...")
             
-            # Check for and dismiss any popups after scrolling
-            await dismiss_popups(page)
-            
-            # Find load more button
-            load_more_button = await find_load_more_button(page)
+            # Scroll all the way down to find load more button
+            load_more_button = await scroll_and_load_content(page)
             
             if load_more_button:
-                # Scroll the button into view before clicking
+                # Click the load more button
                 await load_more_button.scroll_into_view_if_needed()
                 await load_more_button.click()
-                print("🔵 Clicked 'Load more' button.")
-                await page.wait_for_timeout(2000)
                 loads_attempted += 1
+                print(f"🔵 Clicked load more button #{loads_attempted}")
+                
+                # Wait for new content to load
+                await page.wait_for_timeout(2000)
+                
+                # Count current hotels
+                current_cards = await page.locator('[data-testid="property-card"]').count()
+                print(f"🏨 Total hotels now visible: {current_cards}")
+                
+                # Continue the loop to look for more buttons
+                continue
             else:
-                print("❌ Could not find 'Load more' button with any method.")
+                print("❌ No more load more buttons found after scrolling.")
                 break
-        except Exception:
-            print("👍 No more 'Load more results' button found or timeout reached.")
+                
+        except Exception as e:
+            print(f"👍 Load more process completed or error occurred: {e}")
             break
+    
+    final_cards = await page.locator('[data-testid="property-card"]').count()
+    print(f"\n🎉 Process complete! Successfully clicked {loads_attempted} load more buttons")
+    print(f"📊 Final hotel count: {final_cards}")
 
 
 async def scrape_hotel_listings(page):
@@ -267,13 +354,28 @@ async def scrape_hotel_listings(page):
             except Exception:
                 price = "N/A"
 
+        try:
+            num_reviews_text = await listing.locator(
+                'div[data-testid="review-score"] div.d8eab2cf7f.c90c0a70d3.db63693c62').first.inner_text()
+            num_reviews = num_reviews_text.split(' ')[0]
+        except:
+            num_reviews = "N/A"
+
+
+        try:
+            deal_info = await listing.locator('[data-testid="property-card-deal"]').first.inner_text()
+        except Exception:
+            deal_info = "N/A"
+
         hotel_data.append({
             "Hotel name": hotel_name,
             "Address": address,
             "Review Score": review_score,
-            "Distance from Attraction": distance_from_attraction,
-            "Star Rating": star_rating,
+            "Number of Reviews": num_reviews,
             "Rating": rating,
+            "Star Rating": star_rating,
+            "Deal Info": deal_info,
+            "Distance from Attraction": distance_from_attraction,
             "Room Type": room_type,
             "Location Score": location_score,
             "price": price.replace('\n', ' ') if price != "N/A" else "N/A"
@@ -315,7 +417,7 @@ async def scrape_booking(destination, checkin_date, checkout_date):
         await perform_search(page)
 
         # Load more results to get additional hotels
-        # await load_more_results(page)
+        await load_more_results(page)
 
         # Scrape all hotel data
         hotel_data = await scrape_hotel_listings(page)
@@ -340,10 +442,11 @@ def save_hotels_to_csv(hotel_data, destination, checkin_date=None, checkout_date
         # Get today's date
         today_date = date.today().strftime("%Y-%m-%d")
 
-        # Add today's date, source, and search dates to each hotel record
+        # Add today's date, source, search dates, and number of people to each hotel record
         for hotel in hotel_data:
             hotel['Date'] = today_date
             hotel['Source'] = 'booking.com'
+            hotel['Number of People'] = 2  # Default to 2 guests
             if checkin_date:
                 hotel['Check-in Date'] = checkin_date
             if checkout_date:
@@ -351,15 +454,17 @@ def save_hotels_to_csv(hotel_data, destination, checkin_date=None, checkout_date
 
         # Get the fieldnames from the keys of the first hotel dictionary
         # and ensure metadata columns are first
-        priority_fields = ['Date', 'Source', 'Check-in Date', 'Check-out Date']
+        priority_fields = ['Date', 'Source', 'Number of People', 'Check-in Date', 'Check-out Date']
         other_fields = [key for key in hotel_data[0] if key not in priority_fields]
         fieldnames = [field for field in priority_fields if field in hotel_data[0]] + other_fields
 
-        with open(f'{destination}_hotels.csv', 'w', newline='', encoding='utf-8') as file:
+        today_str = date.today().strftime("%Y-%m-%d")
+        filename = f'{destination}_hotels_{today_str}.csv'
+        with open(filename, 'w', newline='', encoding='utf-8') as file:
             writer = csv.DictWriter(file, fieldnames=fieldnames)
             writer.writeheader()
             writer.writerows(hotel_data)
-        print(f"✅ Data successfully saved to {destination}_hotels.csv")
+        print(f"✅ Data successfully saved to {filename}")
     else:
         print("❌ No hotel data to save.")
 
