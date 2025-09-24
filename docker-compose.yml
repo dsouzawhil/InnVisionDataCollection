@@ -1,0 +1,10 @@
+version: '3.8'
+services:
+  booking-scraper:
+    build: .
+    volumes:
+      - ./data:/app/data
+    environment:
+      - TZ=America/Toronto
+    restart: unless-stopped
+    command: python daily_scheduler.py

@@ -1,5 +1,7 @@
 import asyncio
 import csv
+import re
+import time
 from datetime import datetime, timedelta, date
 from playwright.async_api import async_playwright
 
@@ -162,7 +164,7 @@ async def scroll_and_load_content(page):
         
         # Always scroll to bottom to trigger any lazy loading
         await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-        await page.wait_for_timeout(1500)  # Faster scrolling - reduced from 3000ms
+        await page.wait_for_timeout(800)  # Much faster scrolling
         
         # Quick popup check (reduced timeout for speed)
         await dismiss_popups_fast(page)
@@ -199,15 +201,23 @@ async def scroll_and_load_content(page):
     return await find_load_more_button(page)
 
 
-async def load_more_results(page):
-    """Keep scrolling and clicking load more buttons until no more are found."""
+async def load_more_results(page, max_loads=5, max_runtime_minutes=30):
+    """Keep scrolling and clicking load more buttons with safety limits."""
     loads_attempted = 0
+    start_time = time.time()
+    max_runtime = max_runtime_minutes * 60  # Convert to seconds
     
-    print("🔄 Starting continuous scroll and load more process...")
+    print(f"🔄 Starting load more process (max {max_loads} buttons, {max_runtime_minutes}min timeout)...")
     
-    while True:
+    while loads_attempted < max_loads:
         try:
-            print(f"\n🔍 Searching for load more button (attempt {loads_attempted + 1})...")
+            # Check runtime limit
+            elapsed_time = time.time() - start_time
+            if elapsed_time > max_runtime:
+                print(f"⏰ Max runtime ({max_runtime_minutes} minutes) reached, stopping...")
+                break
+            
+            print(f"\n🔍 Search attempt {loads_attempted + 1}/{max_loads} (⏱️ {elapsed_time/60:.1f}min elapsed)...")
             
             # Scroll all the way down to find load more button
             load_more_button = await scroll_and_load_content(page)
@@ -219,15 +229,21 @@ async def load_more_results(page):
                 loads_attempted += 1
                 print(f"🔵 Clicked load more button #{loads_attempted}")
                 
-                # Wait for new content to load
-                await page.wait_for_timeout(2000)
+                # Shorter wait for new content
+                await page.wait_for_timeout(1000)  # Reduced from 2000ms
                 
                 # Count current hotels
                 current_cards = await page.locator('[data-testid="property-card"]').count()
                 print(f"🏨 Total hotels now visible: {current_cards}")
                 
-                # Continue the loop to look for more buttons
-                continue
+                # Safety check - if no new hotels appeared, might be stuck
+                if loads_attempted > 1:
+                    await page.wait_for_timeout(500)
+                    new_count = await page.locator('[data-testid="property-card"]').count()
+                    if new_count == current_cards:
+                        print("⚠️ No new hotels loaded after clicking, might be finished...")
+                        break
+                
             else:
                 print("❌ No more load more buttons found after scrolling.")
                 break
@@ -237,68 +253,231 @@ async def load_more_results(page):
             break
     
     final_cards = await page.locator('[data-testid="property-card"]').count()
+    total_time = time.time() - start_time
     print(f"\n🎉 Process complete! Successfully clicked {loads_attempted} load more buttons")
     print(f"📊 Final hotel count: {final_cards}")
+    print(f"⏱️ Total time: {total_time/60:.1f} minutes")
 
 
+# async def scrape_hotel_listings(page):
+#     """Scrape all hotel listings from the current page."""
+#     hotel_data = []
+#     listings = await page.locator('[data-testid="property-card"]').all()
+#     print(f"Listings scraped. Count: {len(listings)}")
+#
+#     for i, listing in enumerate(listings, 1):
+#         print(f"📍 Processing listing {i}/{len(listings)}")
+#
+#         # try:
+#         #     hotel_name = await listing.locator('[data-testid="title"]').inner_text()
+#         #
+#         # except Exception:
+#         #     hotel_name = "N/A"
+#         #     print(f"   Hotel: {hotel_name} (failed to extract)")
+#         #
+#         # try:
+#         #     score_text = await listing.locator('[aria-label*="Scored"]').first.inner_text()
+#         #     print(f"   Score: {score}")
+#         # except Exception:
+#         #     score = "N/A"
+#         #     print(f"   Score: {score} (failed to extract)")
+#         #
+#         # try:
+#         #     price = await listing.locator('[data-testid="price-and-discounted-price"]').first.inner_text()
+#         # except Exception:
+#         #     price = "N/A"
+#         #     print(f"   Price: {price} (failed to extract)")
+#         #
+#         # hotel_data.append({
+#         #     "name": hotel_name,
+#         #     "score": score,
+#         #     "price": price.replace('\n', ' ')
+#         # })
+#         try:
+#             hotel_name = await listing.locator('[data-testid="title"]').inner_text()
+#         except Exception:
+#             try:
+#                 hotel_name = await listing.locator('h3, .sr-hotel__name, .hotel-name').first.inner_text()
+#             except Exception:
+#                 hotel_name = "N/A"
+#
+#         try:
+#             address = await listing.locator('[data-testid="address"]').first.inner_text()
+#         except Exception:
+#             try:
+#                 address = await listing.locator('.address, .sr-hotel__address').first.inner_text()
+#             except Exception:
+#                 address = "N/A"
+#
+#         try:
+#             review_score = await listing.locator('[data-testid="review-score"] div').first.inner_text()
+#         except Exception:
+#             try:
+#                 review_score = await listing.locator('.bui-review-score__badge, .review-score, [aria-label*="Scored"]').first.inner_text()
+#             except Exception:
+#                 review_score = "N/A"
+#
+#         try:
+#             distance_from_attraction = await listing.locator('span[data-testid="distance"]').first.inner_text()
+#         except Exception:
+#             try:
+#                 distance_from_attraction = await listing.locator('.distance, .sr-hotel__distance').first.inner_text()
+#             except Exception:
+#                 distance_from_attraction = "N/A"
+#
+#         # try:
+#         #     star_rating_element = await listing.locator('[data-testid="rating-stars"], [aria-label*="star"]').first
+#         #     star_rating = await star_rating_element.get_attribute('aria-label')
+#         #     if not star_rating:
+#         #         star_rating = await star_rating_element.inner_text()
+#         try:
+#             star_rating = await listing.locator('div[data-testid="rating"]')['aria-label']
+#         except Exception:
+#             star_rating = "N/A"
+#
+#         except Exception:
+#             try:
+#                 star_rating = await listing.locator('.bui-rating, .star-rating, .sr-hotel__stars, [class*="star"]').first.get_attribute('aria-label')
+#             except Exception:
+#                 star_rating = "N/A"
+#
+#         try:
+#             rating = await listing.locator('[data-testid="review-score"] [aria-label]').first.get_attribute('aria-label')
+#         except Exception:
+#             try:
+#                 rating = await listing.locator('.bui-review-score, .review-rating, [class*="review"]').first.inner_text()
+#             except Exception:
+#                 rating = "N/A"
+#
+#         try:
+#             room_type = await listing.locator('[data-testid="availability-single"] h4').first.inner_text()
+#         except Exception:
+#             try:
+#                 room_type = await listing.locator('.room-type, .sr-hotel__room-info').first.inner_text()
+#             except Exception:
+#                 room_type = "N/A"
+#
+#         try:
+#             location_score = await listing.locator(
+#                 'div[data-testid="review-score"] a[data-testid="secondary-review-score-link"] span').first.inner_text()
+#         except Exception:
+#             try:
+#                 location_score = await listing.locator('.location-score').first.inner_text()
+#             except Exception:
+#                 location_score = "N/A"
+#
+#         try:
+#             price = await listing.locator('[data-testid="price-and-discounted-price"]').first.inner_text()
+#         except Exception:
+#             try:
+#                 price = await listing.locator('.bui-price-display, .sr-hotel__price, .price').first.inner_text()
+#             except Exception:
+#                 price = "N/A"
+#
+#         try:
+#             num_reviews_text = await listing.locator('[data-testid="review-score"] div:has-text("review")').first.inner_text()
+#             num_reviews = num_reviews_text.split(' ')[0]
+#         except Exception:
+#             try:
+#                 num_reviews_text = await listing.locator('[class*="review"] [class*="count"], .bui-review-score__text').first.inner_text()
+#                 num_reviews = ''.join(filter(str.isdigit, num_reviews_text))
+#             except Exception:
+#                 num_reviews = "N/A"
+#
+#
+#         try:
+#             deal_info = await listing.locator('[data-testid="property-card-deal"]').first.inner_text()
+#         except Exception:
+#             deal_info = "N/A"
+#
+#         hotel_data.append({
+#             "Hotel name": hotel_name,
+#             "Address": address,
+#             "Review Score": review_score,
+#             "Number of Reviews": num_reviews,
+#             "Rating": rating,
+#             "Star Rating": star_rating,
+#             "Deal Info": deal_info,
+#             "Distance from Attraction": distance_from_attraction,
+#             "Room Type": room_type,
+#             "Location Score": location_score,
+#             "price": price.replace('\n', ' ') if price != "N/A" else "N/A"
+#         })
+#
+#         # if (i + 1) % 10 == 0:
+#         #     print(f"    Processed {i + 1}/{len(listings)} properties...")
+#
+#         print(f"📊 Scraped data for {len(hotel_data)} hotels.")
+#
+#         print(f"   ✅ Added hotel {i} to data")
+#
+#     return hotel_data
 async def scrape_hotel_listings(page):
     """Scrape all hotel listings from the current page."""
     hotel_data = []
     listings = await page.locator('[data-testid="property-card"]').all()
-    print(f"Listings scraped. Count: {len(listings)}")
+    print(f"Listings found: {len(listings)}, scraping all...")
 
     for i, listing in enumerate(listings, 1):
         print(f"📍 Processing listing {i}/{len(listings)}")
-        
-        # try:
-        #     hotel_name = await listing.locator('[data-testid="title"]').inner_text()
-        #
-        # except Exception:
-        #     hotel_name = "N/A"
-        #     print(f"   Hotel: {hotel_name} (failed to extract)")
-        #
-        # try:
-        #     score_text = await listing.locator('[aria-label*="Scored"]').first.inner_text()
-        #     print(f"   Score: {score}")
-        # except Exception:
-        #     score = "N/A"
-        #     print(f"   Score: {score} (failed to extract)")
-        #
-        # try:
-        #     price = await listing.locator('[data-testid="price-and-discounted-price"]').first.inner_text()
-        # except Exception:
-        #     price = "N/A"
-        #     print(f"   Price: {price} (failed to extract)")
-        #
-        # hotel_data.append({
-        #     "name": hotel_name,
-        #     "score": score,
-        #     "price": price.replace('\n', ' ')
-        # })
+
         try:
             hotel_name = await listing.locator('[data-testid="title"]').inner_text()
         except Exception:
-            try:
-                hotel_name = await listing.locator('h3, .sr-hotel__name, .hotel-name').first.inner_text()
-            except Exception:
-                hotel_name = "N/A"
+            hotel_name = "N/A"
 
         try:
             address = await listing.locator('[data-testid="address"]').first.inner_text()
         except Exception:
-            try:
-                address = await listing.locator('.address, .sr-hotel__address').first.inner_text()
-            except Exception:
-                address = "N/A"
+            address = "N/A"
 
+        # Review Score with multiple fallbacks
+        # try:
+        #     review_score = await listing.locator('[data-testid="review-score"] div:first-child div').first.inner_text()
+        # except Exception:
+        #     try:
+        #         review_score = await listing.locator('[data-testid="review-score"] .a3b8729ab1').first.inner_text()
+        #     except Exception:
+        #         try:
+        #             review_score = await listing.locator('.bui-review-score__badge').first.inner_text()
+        #         except Exception:
+        #             review_score = "N/A"
+        #
+        # # Number of Reviews with better text parsing
+        # try:
+        #     num_reviews_element = await listing.locator('[data-testid="review-score"]').first
+        #     full_text = await num_reviews_element.inner_text()
+        #     # Look for patterns like "1,234 reviews" or "123 review"
+        #     review_match = re.search(r'([\d,]+)\s+review', full_text, re.IGNORECASE)
+        #     num_reviews = review_match.group(1).replace(',', '') if review_match else "N/A"
+        # except Exception:
+        #     try:
+        #         num_reviews_text = await listing.locator('[data-testid="review-score"] div:contains("review")').first.inner_text()
+        #         num_reviews = re.findall(r'[\d,]+', num_reviews_text)[0].replace(',', '') if re.findall(r'[\d,]+', num_reviews_text) else "N/A"
+        #     except Exception:
+        #         num_reviews = "N/A"
+        # Review Score with multiple fallback selectors
+        # --- Review Score ---
+        # try:
+        #     # This selector targets the specific div that contains only the score number.
+        #     review_score_element = await listing.locator(
+        #         '[data-testid="review-score"] [aria-label^="Scored"] > div').first
+        #     review_score = await review_score_element.inner_text()
+        # except Exception:
+        #     review_score = "N/A"
+        # try:
+        #     review_score = await listing.locator(
+        #         'div[data-testid="review-score"] div.a3b8729ab1.d86cee9b25').first.inner_text()
+        # except Exception:
+        #     try:
+        #         review_score = await listing.locator('.bui-review-score__badge, .review-score').first.inner_text()
+        #     except Exception:
+        #         review_score = "N/A"
         try:
-            review_score = await listing.locator(
-                'div[data-testid="review-score"] div.a3b8729ab1.d86cee9b25').first.inner_text()
+            # 1. Locate the main container for the review score. This is our stable anchor.
+            review_block_element = await listing.locator('[data-testid="review-score"]').first
         except Exception:
-            try:
-                review_score = await listing.locator('.bui-review-score__badge, .review-score').first.inner_text()
-            except Exception:
-                review_score = "N/A"
+            review_score = "N/A"
 
         try:
             distance_from_attraction = await listing.locator('span[data-testid="distance"]').first.inner_text()
@@ -309,25 +488,9 @@ async def scrape_hotel_listings(page):
                 distance_from_attraction = "N/A"
 
         try:
-            star_rating_element = await listing.locator('div[data-testid="rating-stars"]').first
-            star_rating = await star_rating_element.get_attribute('aria-label')
+            price = await listing.locator('[data-testid="price-and-discounted-price"]').first.inner_text()
         except Exception:
-            try:
-                star_rating_element = await listing.locator('.star-rating, .sr-hotel__stars').first
-                star_rating = await star_rating_element.get_attribute(
-                    'aria-label') or await star_rating_element.inner_text()
-            except Exception:
-                star_rating = "N/A"
-
-        try:
-            rating_element = await listing.locator('div[data-testid="review-score"] div[aria-label]').first
-            rating = await rating_element.get_attribute('aria-label')
-        except Exception:
-            try:
-                rating_element = await listing.locator('.bui-review-score, .review-rating').first
-                rating = await rating_element.get_attribute('aria-label') or await rating_element.inner_text()
-            except Exception:
-                rating = "N/A"
+            price = "N/A"
 
         try:
             room_type = await listing.locator('[data-testid="availability-single"] h4').first.inner_text()
@@ -336,56 +499,38 @@ async def scrape_hotel_listings(page):
                 room_type = await listing.locator('.room-type, .sr-hotel__room-info').first.inner_text()
             except Exception:
                 room_type = "N/A"
-
         try:
-            location_score = await listing.locator(
-                'div[data-testid="review-score"] a[data-testid="secondary-review-score-link"] span').first.inner_text()
+            review_score_container = page.locator('div[data-testid="review-score"]')
+
+            # 2. Within that container, find the child element with aria-hidden="true".
+            # This element contains the score.
+            score_element = await review_score_container.locator('[aria-hidden="true"]').first
+
+            # 3. Get the text from that element.
+            review_score = await score_element.inner_text()
         except Exception:
-            try:
-                location_score = await listing.locator('.location-score').first.inner_text()
-            except Exception:
-                location_score = "N/A"
-
-        try:
-            price = await listing.locator('[data-testid="price-and-discounted-price"]').first.inner_text()
-        except Exception:
-            try:
-                price = await listing.locator('.bui-price-display, .sr-hotel__price, .price').first.inner_text()
-            except Exception:
-                price = "N/A"
-
-        try:
-            num_reviews_text = await listing.locator(
-                'div[data-testid="review-score"] div.d8eab2cf7f.c90c0a70d3.db63693c62').first.inner_text()
-            num_reviews = num_reviews_text.split(' ')[0]
-        except:
-            num_reviews = "N/A"
-
-
+            review_score = 'N/A'
+            review_element = 'N/A'
         try:
             deal_info = await listing.locator('[data-testid="property-card-deal"]').first.inner_text()
         except Exception:
             deal_info = "N/A"
 
+
+
+
         hotel_data.append({
             "Hotel name": hotel_name,
             "Address": address,
-            "Review Score": review_score,
-            "Number of Reviews": num_reviews,
-            "Rating": rating,
-            "Star Rating": star_rating,
-            "Deal Info": deal_info,
-            "Distance from Attraction": distance_from_attraction,
+            "Review": review_score,
+            # "Number of Reviews": num_reviews,
+            # "Review Block": review_element,
             "Room Type": room_type,
-            "Location Score": location_score,
+            "Distance from attraction": distance_from_attraction,
+            "Deal Info": deal_info,
             "price": price.replace('\n', ' ') if price != "N/A" else "N/A"
         })
 
-        # if (i + 1) % 10 == 0:
-        #     print(f"    Processed {i + 1}/{len(listings)} properties...")
-
-        print(f"📊 Scraped data for {len(hotel_data)} hotels.")
-        
         print(f"   ✅ Added hotel {i} to data")
 
     return hotel_data
@@ -459,7 +604,7 @@ def save_hotels_to_csv(hotel_data, destination, checkin_date=None, checkout_date
         fieldnames = [field for field in priority_fields if field in hotel_data[0]] + other_fields
 
         today_str = date.today().strftime("%Y-%m-%d")
-        filename = f'{destination}_hotels_{today_str}.csv'
+        filename = f'{destination}_hotels_{today_str}_{checkin_date}_to_{checkout_date}.csv'
         with open(filename, 'w', newline='', encoding='utf-8') as file:
             writer = csv.DictWriter(file, fieldnames=fieldnames)
             writer.writeheader()
@@ -473,10 +618,14 @@ async def main():
     """
     Main function to run the Booking.com scraper.
     """
-    # Get user input
+    # Dynamic date calculation (7 days from now for 3 nights)
+    from datetime import timedelta
+    today = datetime.now()
+    checkin_date = (today + timedelta(days=7)).strftime("%Y-%m-%d")
+    checkout_date = (today + timedelta(days=10)).strftime("%Y-%m-%d")
+    
     destination = 'Toronto'
-    checkin_date ='2025-10-03'
-    checkout_date = '2025-10-06'
+    print(f"🗓️ Check-in: {checkin_date}, Check-out: {checkout_date}")
     
     # Scrape hotel data
     hotel_data = await scrape_booking(destination, checkin_date, checkout_date)
