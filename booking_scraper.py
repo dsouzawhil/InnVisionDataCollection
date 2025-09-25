@@ -499,18 +499,18 @@ async def scrape_hotel_listings(page):
                 room_type = await listing.locator('.room-type, .sr-hotel__room-info').first.inner_text()
             except Exception:
                 room_type = "N/A"
-        try:
-            review_score_container = page.locator('div[data-testid="review-score"]')
-
-            # 2. Within that container, find the child element with aria-hidden="true".
-            # This element contains the score.
-            score_element = await review_score_container.locator('[aria-hidden="true"]').first
-
-            # 3. Get the text from that element.
-            review_score = await score_element.inner_text()
-        except Exception:
-            review_score = 'N/A'
-            review_element = 'N/A'
+        # try:
+        #     review_score_container = page.locator('div[data-testid="review-score"]')
+        #
+        #     # 2. Within that container, find the child element with aria-hidden="true".
+        #     # This element contains the score.
+        #     score_element = await review_score_container.locator('[aria-hidden="true"]').first
+        #
+        #     # 3. Get the text from that element.
+        #     review_score = await score_element.inner_text()
+        # except Exception:
+        #     review_score = 'N/A'
+        #     review_element = 'N/A'
         try:
             deal_info = await listing.locator('[data-testid="property-card-deal"]').first.inner_text()
         except Exception:
@@ -522,7 +522,7 @@ async def scrape_hotel_listings(page):
         hotel_data.append({
             "Hotel name": hotel_name,
             "Address": address,
-            "Review": review_score,
+            # "Review": review_score,
             # "Number of Reviews": num_reviews,
             # "Review Block": review_element,
             "Room Type": room_type,
@@ -604,7 +604,7 @@ def save_hotels_to_csv(hotel_data, destination, checkin_date=None, checkout_date
         fieldnames = [field for field in priority_fields if field in hotel_data[0]] + other_fields
 
         today_str = date.today().strftime("%Y-%m-%d")
-        filename = f'{destination}_hotels_{today_str}_{checkin_date}_to_{checkout_date}.csv'
+        filename = f'Data/{destination}_hotels_{today_str}_{checkin_date}_to_{checkout_date}.csv'
         with open(filename, 'w', newline='', encoding='utf-8') as file:
             writer = csv.DictWriter(file, fieldnames=fieldnames)
             writer.writeheader()
@@ -614,26 +614,26 @@ def save_hotels_to_csv(hotel_data, destination, checkin_date=None, checkout_date
         print("❌ No hotel data to save.")
 
 
-async def main():
-    """
-    Main function to run the Booking.com scraper.
-    """
-    # Dynamic date calculation (7 days from now for 3 nights)
-    from datetime import timedelta
-    today = datetime.now()
-    checkin_date = (today + timedelta(days=7)).strftime("%Y-%m-%d")
-    checkout_date = (today + timedelta(days=10)).strftime("%Y-%m-%d")
-    
-    destination = 'Toronto'
-    print(f"🗓️ Check-in: {checkin_date}, Check-out: {checkout_date}")
-    
-    # Scrape hotel data
-    hotel_data = await scrape_booking(destination, checkin_date, checkout_date)
-    
-    # Save to CSV
-    save_hotels_to_csv(hotel_data, destination, checkin_date, checkout_date)
-
-
-# Run the async function using asyncio.run()
-# This is safe because we applied the nest_asyncio patch at the top
-asyncio.run(main())
+# async def main():
+#     """
+#     Main function to run the Booking.com scraper.
+#     """
+#     # Dynamic date calculation (7 days from now for 3 nights)
+#     from datetime import timedelta
+#     today = datetime.now()
+#     checkin_date = (today + timedelta(days=7)).strftime("%Y-%m-%d")
+#     checkout_date = (today + timedelta(days=10)).strftime("%Y-%m-%d")
+#
+#     destination = 'Toronto'
+#     print(f"🗓️ Check-in: {checkin_date}, Check-out: {checkout_date}")
+#
+#     # Scrape hotel data
+#     hotel_data = await scrape_booking(destination, checkin_date, checkout_date)
+#
+#     # Save to CSV
+#     save_hotels_to_csv(hotel_data, destination, checkin_date, checkout_date)
+#
+#
+# # Run the async function using asyncio.run()
+# # This is safe because we applied the nest_asyncio patch at the top
+# asyncio.run(main())

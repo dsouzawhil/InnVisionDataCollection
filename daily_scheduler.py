@@ -65,6 +65,10 @@ def job_with_stop_check():
         return schedule.CancelJob
     return job()
 
+# Run immediately first, then schedule for daily runs
+print("🚀 Running scraper immediately...")
+job_with_stop_check()
+
 schedule.every().day.at("09:00").do(job_with_stop_check)  # Run at 9 AM daily
 
 print("📅 Daily booking scraper scheduler started...")
