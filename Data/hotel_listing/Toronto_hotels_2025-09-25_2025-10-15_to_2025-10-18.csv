@@ -1,0 +1,101 @@
+Date,Source,Number of People,Check-in Date,Check-out Date,Hotel name,Address,Room Type,Distance from attraction,Deal Info,price
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Riu Plaza Toronto,"Entertainment District, Toronto (Entertainment District)",Deluxe Double Room with Two Double Beds,0.6 miles from downtown,N/A,$263
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Sonder by Marriott Bonvoy Artesa Apartments West Queen West,Toronto,One-Bedroom Apartment with Double Bed and Balcony,2.4 miles from downtown,N/A,$242
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Chelsea Hotel Toronto,"Yonge - Dundas, Toronto (Yonge - Dundas)",Standard Double Room with Two Double Beds,0.5 miles from downtown,N/A,$196
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Sonder by Marriott Bonvoy The Liberty Apartments Liberty Village,Toronto,One-Bedroom Superior Apartment with Queen Bed,2.2 miles from downtown,N/A,$319
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Samesun Toronto,"Kensington Market, Toronto (Kensington Market)",Queen Room with Balcony,1.1 miles from downtown,N/A,$157
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Great Canadian Casino Resort Toronto,"Etobicoke, Toronto",Premium King,11.9 miles from downtown,N/A,$134
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Holiday Inn Toronto Downtown Centre by IHG,"The Village, Toronto (The Village)",Premium King Room,0.7 miles from downtown,N/A,$195
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Town Inn Suites Hotel,"The Village, Toronto (The Village)",Deluxe King Suite,1.2 miles from downtown,N/A,$227
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,DoubleTree by Hilton Toronto Downtown,"Downtown Toronto, Toronto",Queen Room,0.3 miles from downtown,N/A,$311
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Hampton Inn by Hilton Toronto Airport Corporate Centre,Toronto,King Room with King Bed - Non-Smoking,11 miles from downtown,N/A,$136
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Canadas Best Value Inn Toronto,"Etobicoke, Toronto",Business Queen Room - Non Smoking,9 miles from downtown,N/A,$93
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Homewood Suites by Hilton Toronto Airport Corporate Centre,Toronto,King Suite - Disability Access,11 miles from downtown,N/A,$144
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Executive Hotel Cosmopolitan Toronto,"Old Town Toronto, Toronto (Old Town Toronto)",Family Suite with Sofabed,0.3 miles from downtown,N/A,$301
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Sheraton Centre Toronto Hotel,"Downtown Toronto, Toronto (Queen West)","Guest room, 2 Queen beds",0.1 miles from downtown,N/A,$299
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Sandman Signature Toronto Airport Hotel,"Etobicoke, Toronto","Standard Room, 2 Queen Beds",10.7 miles from downtown,N/A,$156
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Holiday Inn Toronto International Airport by IHG,"Etobicoke, Toronto (Northeast Mississauga)",Standard Room,11.2 miles from downtown,N/A,$191
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,"Hotel X Toronto, a Destination by Hyatt Hotel",Toronto,King Room,2 miles from downtown,N/A,$338
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Fairmont Royal York Hotel,"Financial District, Toronto (Entertainment District)",Queen Room,0.4 miles from downtown,N/A,$470
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Gladstone House,"West Queen West, Toronto (West Queen West)",Studio Queen,2.3 miles from downtown,N/A,$335
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,The Novotel Toronto Centre,"Old Town Toronto, Toronto (Old Town Toronto)",Superior with Two Queen Beds - Renovated,0.5 miles from downtown,N/A,$444
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Best Western Plus Travel Hotel Toronto Airport,Toronto,Queen Room,10.9 miles from downtown,N/A,$150
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Embassy Suites By Hilton Toronto Airport,"Etobicoke, Toronto (Northeast Mississauga)",Two-Room King Suite,11 miles from downtown,N/A,$149
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,"Delta Suites - In Downtown Toronto, Opposite Scotiabank Arena, CN Tower, Rogers Centre & MTCC","Entertainment District, Toronto (Entertainment District)",One-Bedroom Apartment,0.6 miles from downtown,N/A,$251
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Comfort Iceboat Suites Lakeview & Free Parking,"Downtown Toronto, Toronto",Two-Bedroom Apartment,1.1 miles from downtown,N/A,$202
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,SoHo Hotel Toronto,"Entertainment District, Toronto (Entertainment District)",Luxury King Room,0.7 miles from downtown,N/A,$329
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Hilton Toronto,"Financial District, Toronto (Financial District)",Deluxe Queen Room with Two Queen Beds,0.2 miles from downtown,N/A,$363
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Crowne Plaza Toronto Airport by IHG,"Etobicoke, Toronto",Standard Room,10.5 miles from downtown,N/A,$150
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Holiday Inn Express Toronto Downtown by IHG,"Old Town Toronto, Toronto (Old Town Toronto)",Standard King Room,0.5 miles from downtown,N/A,$348
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Regis Suites - Downtown Toronto - CN Tower & Rogers Centre,"Downtown Toronto, Toronto",Two-Bedroom Apartment,0.9 miles from downtown,N/A,$323
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,KozyStay Toronto,"North York, Toronto",Three-Bedroom House,9 miles from downtown,N/A,$187
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Novotel Toronto North York,"North York, Toronto",Superior King Room,8.2 miles from downtown,N/A,$211
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,B Hotel,Toronto,Suite with City View,2.7 miles from downtown,N/A,$144
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Canopy By Hilton Toronto Yorkville,"Downtown Toronto, Toronto",King Room,1.4 miles from downtown,N/A,$358
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Spark by Hilton Toronto Airport,"Etobicoke, Toronto",King Room,10.8 miles from downtown,N/A,$114
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,"Doubletree by Hilton Toronto Airport, ON","Etobicoke, Toronto (Northeast Mississauga)",King Room,11 miles from downtown,N/A,$193
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Holiday Inn Toronto Airport East by IHG,"Etobicoke, Toronto",Standard Queen Room with Two Queen Beds,9.9 miles from downtown,N/A,$167
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Downtown west Suites,"Entertainment District, Toronto (Entertainment District)",Two-Bedroom Apartment,0.7 miles from downtown,N/A,$277
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Woodbine Hotel & Suites,"Etobicoke, Toronto",Queen Room,11.3 miles from downtown,N/A,$104
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Sweet Home,"Downtown Toronto, Toronto",Quadruple Room with Private Bathroom,0.6 miles from downtown,N/A,$165
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Adas Guesthouse,"Downtown Toronto, Toronto",Standard Queen Room,1.3 miles from downtown,N/A,$97
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Holiday Inn Express & Suites Toronto Airport South by IHG,"Etobicoke, Toronto (Northeast Mississauga)",Standard King Room,10.5 miles from downtown,N/A,$185
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Ace Hotel Toronto,"Fashion District, Toronto (Fashion District)",King Room,0.9 miles from downtown,N/A,$359
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Breezy Lake And City Views - One Free Underground Parking,"Downtown Toronto, Toronto",Two-Bedroom Apartment,1.1 miles from downtown,N/A,$276
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Hampton Inn & Suites by Hilton Toronto Downtown,"The Village, Toronto (The Village)",King Room with Bath Tub - Mobility Access,0.7 miles from downtown,N/A,$242
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Courtyard by Marriott Toronto Airport,"Etobicoke, Toronto (Northeast Mississauga)",Queen Room with Two Queen Beds,10.9 miles from downtown,N/A,$221
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Yorkville Plaza Suites - Pool & Hot Tub,"Bloor-Yorkville, Toronto (Bloor-Yorkville)",Two-Bedroom Apartment,1.4 miles from downtown,N/A,$431
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Union Hotel,"Financial District, Toronto (Financial District)",Queen Room,0.4 miles from downtown,N/A,$360
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,W Toronto,"Bloor-Yorkville, Toronto (Bloor-Yorkville)",Deluxe King Room,1.3 miles from downtown,N/A,$311
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Toronto Marriott City Centre Hotel,"Entertainment District, Toronto (Entertainment District)","Guest room, 1 Queen",0.8 miles from downtown,N/A,$582
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Hyatt Regency Toronto,"Entertainment District, Toronto (Entertainment District)",Double Room with Two Double Beds,0.6 miles from downtown,N/A,$362
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Toronto Don Valley Hotel and Suites,"North York, Toronto",Double Room with Two Double Beds,5.7 miles from downtown,N/A,$126
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,"Revery Toronto Downtown, Curio Collection by Hilton","Entertainment District, Toronto (Entertainment District)",King Room,0.6 miles from downtown,N/A,$341
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Core Downtown Toronto-3 Bedrooms-2 Bathrooms-Washrooms-Free Parking-CN Tower-Ripleys Museum-Blue Jays Stadium In front-Indoor Gym-Swimming Pool-Jacuzzi Sauna-Filter Drinking Water-WiFi,"Entertainment District, Toronto (Entertainment District)",Three-Bedroom Apartment,0.7 miles from downtown,N/A,$292
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Old Mill Toronto Hotel,"Etobicoke, Toronto",Basic Queen Room,5.5 miles from downtown,N/A,$194
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Sheraton Toronto Airport Hotel & Conference Centre,"Etobicoke, Toronto","Larger Guest room, 1 King, Golf view, High floor",10.5 miles from downtown,N/A,$273
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,A Home Away-Deluxe Guest Room in Toronto,"North York, Toronto",Queen Room,9.5 miles from downtown,N/A,$60
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,EST Hotel,"Etobicoke, Toronto",Standard one Queen bed,13 miles from downtown,N/A,$160
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Warm Downtown Home,"Old Town Toronto, Toronto (Old Town Toronto)",Standard Double Room,0.5 miles from downtown,Late Escape Deal,$111
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Kimpton Saint George Hotel by IHG,"The Annex, Toronto (The Annex)",Premium King Room - High Floor,1.4 miles from downtown,N/A,$385
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Modern Private Room Private Bathroom with King Bed with TV and Optional Balcony 10 minutes to Rogers Stadium Midtown Downtown Toronto,"North York, Toronto",Triple Room with Private Bathroom,7.5 miles from downtown,N/A,$106
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,"The Anndore House, part of JDV by Hyatt","The Village, Toronto (The Village)",Queen Room with Two Queen Beds - High Floor,1.2 miles from downtown,N/A,$418
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,586 Hotel,"Kensington Market, Toronto (Kensington Market)",Double Room,0.9 miles from downtown,N/A,$122
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Stay Inn Hotel Toronto,"Etobicoke, Toronto",Business King Room - Fully Renovated 2021,8.6 miles from downtown,N/A,$151
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Comfort Inn & Conference Centre Toronto Airport,"Etobicoke, Toronto",Standard King Room,10.7 miles from downtown,N/A,$109
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Toronto Travellers Home,"Kensington Market, Toronto (Kensington Market)",N/A,0.9 miles from downtown,N/A,$88
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Falstaff Home,Toronto,Junior Suite,7.3 miles from downtown,N/A,$75
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Super 8 by Wyndham Toronto East ON,"Scarborough, Toronto",Queen Room - Smoking,9.7 miles from downtown,N/A,$104
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Four Seasons Hotel Toronto,"Bloor-Yorkville, Toronto (Bloor-Yorkville)",Premier King Room,1.4 miles from downtown,N/A,$835
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,1 Hotel Toronto,"Fashion District, Toronto (Fashion District)",King Room with Balcony,1.2 miles from downtown,N/A,$631
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Luxury Spacious 3 Bedrooms Trinity Bellwoods,Toronto,Apartment,2.2 miles from downtown,N/A,$279
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Dragon Gate Inn,"Downtown Toronto, Toronto",Superior Studio (2 Adults),1.3 miles from downtown,N/A,$124
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Courtyard by Marriott Toronto Downtown,"The Village, Toronto (The Village)",King Room with City View,0.8 miles from downtown,N/A,$246
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Designer One Bedroom Suite - Entertainment District Toronto,"Entertainment District, Toronto (Entertainment District)",One-Bedroom Apartment,0.4 miles from downtown,N/A,$287
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Nox Hostel,"Downtown Toronto, Toronto",Double Room with Shared Bathroom,1.3 miles from downtown,Late Escape Deal,$84
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,freed Suites - Downtown Toronto,"Entertainment District, Toronto (Entertainment District)",Two-Bedroom Apartment with Balcony,0.4 miles from downtown,N/A,$338
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Royal Oak Inn,"Cabbagetown, Toronto (Cabbagetown)",Double Room,0.8 miles from downtown,N/A,$119
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Lakeview Condo in Downtown with Free Parking.,"Downtown Toronto, Toronto",Two-Bedroom Apartment,1.5 miles from downtown,N/A,$324
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,The Westin Toronto Airport,"Etobicoke, Toronto (Northeast Mississauga)","Traditional, Guest room, 1 King",11.1 miles from downtown,N/A,$186
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Designer 3Br & 2WR Townhouse,Toronto,Three-Bedroom Apartment,3.4 miles from downtown,N/A,$287
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Hotel Victoria,"Financial District, Toronto (Financial District)",Deluxe King Room,0.3 miles from downtown,N/A,$305
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Pantages Hotel Toronto Centre,"Yonge - Dundas, Toronto (Yonge - Dundas)",City King Room,0.2 miles from downtown,N/A,$277
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,"The Ellios Suites - In Downtown Toronto, Opposite CN Tower & Rogers Centre","Entertainment District, Toronto (Entertainment District)",One-Bedroom Apartment,0.7 miles from downtown,N/A,$251
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Stylish Condo Downtown Near CN Tower - Free parking,"Downtown Toronto, Toronto",One-Bedroom Apartment,1.1 miles from downtown,N/A,$276
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Modern Toronto Lake View & CN Tower View - One Free Parking,"The Harbourfront, Toronto (Entertainment District)",Two-Bedroom Apartment,0.6 miles from downtown,Late Escape Deal,$288
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Queen bedroom,"Etobicoke, Toronto",Queen Room,10.5 miles from downtown,N/A,$52
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Two BD CN Tower and Lake Ontario View,"Entertainment District, Toronto (Entertainment District)",Two-Bedroom Apartment,0.7 miles from downtown,N/A,$336
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Luxury Home - Upper Toronto Beaches,Toronto,Holiday Home,3.7 miles from downtown,Late Escape Deal,$465
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Deluxe Inn,"Etobicoke, Toronto",Queen Room - Non-Smoking,8.2 miles from downtown,N/A,$95
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Madison Manor Boutique Hotel,"The Annex, Toronto (The Annex)",King or Queen Room,1.5 miles from downtown,N/A,$201
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Belarte Suites - Downtown Toronto - CN Tower & Rogers Centre,"Entertainment District, Toronto (Entertainment District)",Three-Bedroom Apartment,0.7 miles from downtown,N/A,$719
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,The Westlake,"Etobicoke, Toronto",Queen Suite,7 miles from downtown,N/A,$214
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Park Hyatt Toronto,"The Annex, Toronto (The Annex)",One-Bedroom Deluxe Corner Suite - High Floor,1.4 miles from downtown,N/A,"$1,142"
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Urban Explore,"Downtown Toronto, Toronto",Superior Suite,0.7 miles from downtown,N/A,$312
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,9mins airport 1 min to shopping mall,"Etobicoke, Toronto",Small Double Room,9.6 miles from downtown,N/A,$45
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Delta Hotels by Marriott Toronto,"Entertainment District, Toronto (Entertainment District)",Queen Room with Two Queen Beds,0.7 miles from downtown,N/A,$424
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,The Omni King Edward Hotel,"Old Town Toronto, Toronto (Old Town Toronto)",Premier Room - 1 King Bed,0.3 miles from downtown,N/A,$558
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,"Large Downtown 2Br condo with Parking steps to Eaton Centre, UofT and SickKids","Downtown Toronto, Toronto",Two-Bedroom Apartment,0.6 miles from downtown,N/A,$248
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,RivetStays - The Jarvis,"Downtown Toronto, Toronto",Royal Apartment,0.5 miles from downtown,N/A,$204
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Luxury Basement-Private Bdr & Bathroom with free parking In Toronto,"Etobicoke, Toronto",Superior Queen Room,12.5 miles from downtown,N/A,$57
+2025-09-25,booking.com,2,2025-10-15,2025-10-18,Best Western Plus Toronto North York Hotel & Suites,"North York, Toronto",Queen Room,10.3 miles from downtown,N/A,$125

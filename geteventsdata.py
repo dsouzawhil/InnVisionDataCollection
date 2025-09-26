@@ -187,13 +187,13 @@ if all_year_events:
 
 
 df.to_csv('Data/toronto_events_2025.csv', index=False)
-print("DataFrame saved to toronto_events_2025.csv")
+print("DataFrame saved to Data/toronto_events_2025.csv")
 
 """Scoring Events
 
 """
 
-def create_event_scores(input_filename='toronto_events_2025.csv', output_filename='toronto_events_with_scores.csv'):
+def create_event_scores(input_filename='Data/toronto_events_2025.csv', output_filename='Data/toronto_events_with_scores.csv'):
     """
     Loads event data, calculates a heuristic event score with special keyword handling,
     and saves the results.

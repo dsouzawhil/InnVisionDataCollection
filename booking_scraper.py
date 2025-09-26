@@ -48,22 +48,19 @@ async def perform_search(page):
 
 
 async def dismiss_popups_fast(page):
-    """Quick popup dismissal with shorter timeouts for speed."""
+    """Ultra-fast popup dismissal."""
     popup_selectors = [
         'button[aria-label="Dismiss"]',
         'button[aria-label="Close"]',
-        'button:has-text("Close")',
-        'button:has-text("Got it")',
-        'button:has-text("OK")'
+        'button:has-text("Close")'
     ]
     
     for selector in popup_selectors:
         try:
             popup_button = page.locator(selector).first
-            await popup_button.wait_for(state="visible", timeout=500)  # Very fast timeout
+            await popup_button.wait_for(state="visible", timeout=200)  # Ultra fast
             await popup_button.click()
-            print(f"👋 Quick dismissed popup: {selector}")
-            return  # Exit after first successful dismissal
+            return  # Exit after first success
         except:
             continue
 
@@ -147,116 +144,76 @@ async def find_load_more_button(page):
 
 
 async def scroll_and_load_content(page):
-    """Scroll down incrementally to load more content and find load more button."""
-    print("🔄 Starting incremental scroll to load all content...")
+    """Optimized scroll to load content and find load more button."""
+    print("🔄 Quick scroll to load content...")
     
-    previous_height = 0
     scroll_attempts = 0
-    max_scroll_attempts = 20  # Increased limit
-    no_new_content_count = 0
+    max_scroll_attempts = 8  # Reduced attempts
     
     while scroll_attempts < max_scroll_attempts:
-        # Get current page height
         current_height = await page.evaluate("document.body.scrollHeight")
         
-        # Scroll down incrementally, but ensure we actually scroll to bottom when needed
-        scroll_position = (scroll_attempts + 1) * 1000  # Increased to 1000px increments
-        
-        # Always scroll to bottom to trigger any lazy loading
+        # Fast scroll to bottom
         await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-        await page.wait_for_timeout(800)  # Much faster scrolling
+        await page.wait_for_timeout(300)  # Much faster - reduced from 800ms
         
-        # Quick popup check (reduced timeout for speed)
-        await dismiss_popups_fast(page)
-        
-        # Check if new content loaded (page height increased)
-        new_height = await page.evaluate("document.body.scrollHeight")
-        if new_height > current_height:
-            print(f"📈 New content loaded! Height: {current_height} → {new_height}")
-            no_new_content_count = 0  # Reset counter
-        else:
-            no_new_content_count += 1
-            print(f"⏸️ No new content loaded (attempt {no_new_content_count})")
-        
-        # Count current hotel cards
-        current_cards = await page.locator('[data-testid="property-card"]').count()
-        print(f"🏨 Current hotel cards visible: {current_cards}")
-        
-        # Try to find load more button
+        # Check for load more button early
         load_more_button = await find_load_more_button(page)
         if load_more_button:
-            print("✅ Found load more button during scroll!")
+            print("✅ Found load more button!")
             return load_more_button
-            
-        # Stop if no new content for 2 consecutive attempts (faster)
-        if no_new_content_count >= 2:
-            print("🏁 No new content loading after multiple attempts. Reached end.")
-            break
-            
-        previous_height = new_height
+        
+        # Quick height check
+        new_height = await page.evaluate("document.body.scrollHeight")
+        if new_height == current_height:
+            # No new content, try one more time then exit
+            await page.wait_for_timeout(500)
+            new_height = await page.evaluate("document.body.scrollHeight")
+            if new_height == current_height:
+                break
+        
         scroll_attempts += 1
-        print(f"📍 Scroll attempt {scroll_attempts}/{max_scroll_attempts}")
     
-    print("🔍 Final check - trying to find load more button one more time...")
     return await find_load_more_button(page)
 
 
-async def load_more_results(page, max_loads=5, max_runtime_minutes=30):
-    """Keep scrolling and clicking load more buttons with safety limits."""
+async def load_more_results(page, max_loads=5, max_runtime_minutes=15):
+    """Optimized load more with faster timeouts."""
     loads_attempted = 0
     start_time = time.time()
-    max_runtime = max_runtime_minutes * 60  # Convert to seconds
+    max_runtime = max_runtime_minutes * 60
     
-    print(f"🔄 Starting load more process (max {max_loads} buttons, {max_runtime_minutes}min timeout)...")
+    print(f"🔄 Fast load more process (max {max_loads} buttons, {max_runtime_minutes}min timeout)...")
     
     while loads_attempted < max_loads:
         try:
-            # Check runtime limit
-            elapsed_time = time.time() - start_time
-            if elapsed_time > max_runtime:
-                print(f"⏰ Max runtime ({max_runtime_minutes} minutes) reached, stopping...")
+            if time.time() - start_time > max_runtime:
+                print(f"⏰ Max runtime reached, stopping...")
                 break
             
-            print(f"\n🔍 Search attempt {loads_attempted + 1}/{max_loads} (⏱️ {elapsed_time/60:.1f}min elapsed)...")
-            
-            # Scroll all the way down to find load more button
             load_more_button = await scroll_and_load_content(page)
             
             if load_more_button:
-                # Click the load more button
-                await load_more_button.scroll_into_view_if_needed()
                 await load_more_button.click()
                 loads_attempted += 1
-                print(f"🔵 Clicked load more button #{loads_attempted}")
+                print(f"🔵 Clicked load more #{loads_attempted}")
                 
-                # Shorter wait for new content
-                await page.wait_for_timeout(1000)  # Reduced from 2000ms
+                # Much shorter wait
+                await page.wait_for_timeout(500)  # Reduced from 1000ms
                 
-                # Count current hotels
                 current_cards = await page.locator('[data-testid="property-card"]').count()
-                print(f"🏨 Total hotels now visible: {current_cards}")
-                
-                # Safety check - if no new hotels appeared, might be stuck
-                if loads_attempted > 1:
-                    await page.wait_for_timeout(500)
-                    new_count = await page.locator('[data-testid="property-card"]').count()
-                    if new_count == current_cards:
-                        print("⚠️ No new hotels loaded after clicking, might be finished...")
-                        break
-                
+                print(f"🏨 Hotels: {current_cards}")
             else:
-                print("❌ No more load more buttons found after scrolling.")
+                print("❌ No more load more buttons found.")
                 break
                 
         except Exception as e:
-            print(f"👍 Load more process completed or error occurred: {e}")
+            print(f"Load more error: {e}")
             break
     
     final_cards = await page.locator('[data-testid="property-card"]').count()
     total_time = time.time() - start_time
-    print(f"\n🎉 Process complete! Successfully clicked {loads_attempted} load more buttons")
-    print(f"📊 Final hotel count: {final_cards}")
-    print(f"⏱️ Total time: {total_time/60:.1f} minutes")
+    print(f"🎉 Complete! {loads_attempted} clicks, {final_cards} hotels, {total_time/60:.1f}min")
 
 
 # async def scrape_hotel_listings(page):
@@ -604,7 +561,7 @@ def save_hotels_to_csv(hotel_data, destination, checkin_date=None, checkout_date
         fieldnames = [field for field in priority_fields if field in hotel_data[0]] + other_fields
 
         today_str = date.today().strftime("%Y-%m-%d")
-        filename = f'Data/{destination}_hotels_{today_str}_{checkin_date}_to_{checkout_date}.csv'
+        filename = f'Data/hotel_listing/{destination}_hotels_{today_str}_{checkin_date}_to_{checkout_date}.csv'
         with open(filename, 'w', newline='', encoding='utf-8') as file:
             writer = csv.DictWriter(file, fieldnames=fieldnames)
             writer.writeheader()

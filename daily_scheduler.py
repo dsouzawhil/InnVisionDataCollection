@@ -15,16 +15,12 @@ async def run_daily_scrape():
     
     # List of check-in and check-out date combinations
     date_combinations = [
-        ("2025-10-10", "2025-10-13"),  # 3 nights
-        ("2025-10-15", "2025-10-18"),  # 3 nights  
-        ("2025-10-20", "2025-10-23"),  # 3 nights
-        ("2025-10-25", "2025-10-28"),  # 3 nights
-        ("2025-11-01", "2025-11-04"),  # 3 nights
-        ("2025-11-05", "2025-11-08"),  # 3 nights
-        ("2025-11-10", "2025-11-13"),  # 3 nights
-        ("2025-11-15", "2025-11-18"),  # 3 nights
-        ("2025-11-20", "2025-11-23"),  # 3 nights
-        ("2025-11-25", "2025-11-28"),  # 3 nights
+        ("2025-10-10", "2025-10-13"),
+        ("2025-10-13", "2025-10-15"),
+        ("2025-10-15", "2025-10-17"),
+        ("2025-10-20", "2025-10-23"),
+        ("2025-10-24", "2025-10-26"),
+        ("2025-11-01", "2025-11-03")
     ]
     
     # Loop through all date combinations
@@ -38,16 +34,16 @@ async def run_daily_scrape():
                 save_hotels_to_csv(hotel_data, destination, checkin_date, checkout_date)
                 print(f"✅ Completed {destination}: {len(hotel_data)} hotels")
                 
-                # Wait 2 minutes between destinations to avoid rate limiting
-                await asyncio.sleep(120)
+                # Reduced wait time between destinations
+                await asyncio.sleep(30)  # Reduced from 120s to 30s
                 
             except Exception as e:
                 print(f"❌ Error scraping {destination}: {e}")
         
-        # Wait 3 minutes between date combinations
+        # Shorter wait between date combinations
         if combo_index < len(date_combinations):
-            print(f"⏳ Waiting 3 minutes before next date combination...")
-            await asyncio.sleep(180)
+            print(f"⏳ Waiting 1 minute before next date combination...")
+            await asyncio.sleep(60)  # Reduced from 180s to 60s
     
     print(f"🎉 Daily scrape completed at {datetime.now()}")
 
