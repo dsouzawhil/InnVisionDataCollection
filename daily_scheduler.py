@@ -17,10 +17,8 @@ async def run_daily_scrape():
     date_combinations = [
         ("2025-10-10", "2025-10-13"),
         ("2025-10-13", "2025-10-15"),
-        ("2025-10-15", "2025-10-17"),
-        ("2025-10-20", "2025-10-23"),
-        ("2025-10-24", "2025-10-26"),
-        ("2025-11-01", "2025-11-03")
+        ("2025-10-15", "2025-10-17")
+
     ]
     
     # Loop through all date combinations
@@ -65,7 +63,7 @@ def job_with_stop_check():
 print("🚀 Running scraper immediately...")
 job_with_stop_check()
 
-schedule.every().day.at("09:00").do(job_with_stop_check)  # Run at 9 AM daily
+schedule.every().day.at("10:00").do(job_with_stop_check)  # Run at 9 AM daily
 
 print("📅 Daily booking scraper scheduler started...")
 print("⏰ Will run every day at 9:00 AM")

@@ -47,6 +47,106 @@ def read_toronto_events():
         print("💡 Please run geteventsdata.py first to generate the events data.")
         return None
 
+def read_toronto_weather():
+    """Read the Toronto weather data file."""
+    weather_file = 'Data/toronto_weather_2025.csv'
+    
+    if os.path.exists(weather_file):
+        try:
+            weather_df = pd.read_csv(weather_file)
+            print(f"✅ Successfully loaded {len(weather_df)} weather records from {weather_file}")
+            
+            # Display basic info about the weather data
+            print(f"\n🌤️ Weather Dataset Info:")
+            print(f"   Total records: {len(weather_df)}")
+            print(f"   Columns: {list(weather_df.columns)}")
+            
+            if 'LOCAL_DATE' in weather_df.columns:
+                print(f"   Date range: {weather_df['LOCAL_DATE'].min()} to {weather_df['LOCAL_DATE'].max()}")
+            
+            return weather_df
+            
+        except Exception as e:
+            print(f"❌ Error loading weather data: {e}")
+            return None
+    else:
+        print(f"❌ Weather file not found: {weather_file}")
+        print("💡 Please run get_weather.py first to generate the weather data.")
+        return None
+
+def clean_weather_data(weather_df):
+    """Clean the weather dataframe by selecting relevant columns and converting date columns."""
+    if weather_df is None:
+        print("❌ No weather data provided for cleaning.")
+        return None
+    
+    print("🧹 Starting weather data cleaning...")
+    
+    # Create a copy to avoid modifying original data
+    weather_cleaned = weather_df.copy()
+    
+    # Select only the required columns for hotel analysis
+    required_columns = [
+        'LOCAL_DATE',
+        'MEAN_TEMPERATURE',
+        'MIN_TEMPERATURE', 
+        'MAX_TEMPERATURE',
+        'TOTAL_PRECIPITATION',
+        'TOTAL_SNOW',
+        'SNOW_ON_GROUND',
+        'SPEED_MAX_GUST',
+        'MAX_REL_HUMIDITY'
+    ]
+    
+    # Keep only columns that exist in the DataFrame
+    available_columns = [col for col in required_columns if col in weather_cleaned.columns]
+    missing_columns = [col for col in required_columns if col not in weather_cleaned.columns]
+    
+    if missing_columns:
+        print(f"⚠️ Missing columns: {missing_columns}")
+    
+    weather_cleaned = weather_cleaned[available_columns].copy()
+    print(f"📊 Selected {len(available_columns)} weather columns")
+    
+    # Convert LOCAL_DATE to datetime
+    if 'LOCAL_DATE' in weather_cleaned.columns:
+        print("📅 Converting LOCAL_DATE to datetime...")
+        
+        # Convert to datetime
+        weather_cleaned['LOCAL_DATE'] = pd.to_datetime(weather_cleaned['LOCAL_DATE'], errors='coerce')
+        
+        # Count successful conversions
+        valid_dates = weather_cleaned['LOCAL_DATE'].notna().sum()
+        invalid_dates = weather_cleaned['LOCAL_DATE'].isna().sum()
+        print(f"   ✅ Converted {valid_dates} date values to datetime")
+        if invalid_dates > 0:
+            print(f"   ⚠️ {invalid_dates} invalid dates set to NaN")
+    
+    # Convert numeric weather columns to proper data types
+    numeric_columns = [
+        'MEAN_TEMPERATURE', 'MIN_TEMPERATURE', 'MAX_TEMPERATURE',
+        'TOTAL_PRECIPITATION', 'TOTAL_SNOW', 'SNOW_ON_GROUND',
+        'SPEED_MAX_GUST', 'MAX_REL_HUMIDITY'
+    ]
+    
+    for col in numeric_columns:
+        if col in weather_cleaned.columns:
+            print(f"🔢 Converting {col} to numeric...")
+            
+            # Convert to numeric, handling any non-numeric values
+            weather_cleaned[col] = pd.to_numeric(weather_cleaned[col], errors='coerce')
+            
+            valid_values = weather_cleaned[col].notna().sum()
+            invalid_values = weather_cleaned[col].isna().sum()
+            print(f"   ✅ Converted {valid_values} {col} values to numeric")
+            if invalid_values > 0:
+                print(f"   ⚠️ {invalid_values} invalid {col} values set to NaN")
+    
+    print(f"✅ Weather data cleaning complete. DataFrame now has {len(weather_cleaned.columns)} columns.")
+    print(f"   Cleaned columns: {list(weather_cleaned.columns)}")
+    
+    return weather_cleaned
+
 def clean_events_data(events_df):
     """Clean the events dataframe by converting date and numeric columns to proper data types."""
     if events_df is None:
@@ -610,6 +710,15 @@ def main():
         print("\n1️⃣.1 Cleaning Events Data...")
         events_df = clean_events_data(events_df)
 
+    # Read weather data
+    print("\n1️⃣.2 Loading Weather Data...")
+    weather_df = read_toronto_weather()
+
+    # Clean weather data
+    if weather_df is not None:
+        print("\n1️⃣.3 Cleaning Weather Data...")
+        weather_df = clean_weather_data(weather_df)
+
     # Read all hotel data
     print("\n2️⃣ Loading Hotel Data...")
     hotels_df = read_all_hotel_files()
@@ -634,13 +743,27 @@ def main():
     else:
         print("❌ Events: Failed to load")
 
+    if weather_df is not None:
+        print(f"✅ Weather: {len(weather_df)} records loaded")
+    else:
+        print("❌ Weather: Failed to load")
+
     if hotels_df is not None:
         print(f"✅ Hotels: {len(hotels_df)} records loaded")
     else:
         print("❌ Hotels: Failed to load")
 
-    if events_df is not None and hotels_df is not None:
-        print("\n🎉 Both datasets loaded successfully!")
+    # Determine which datasets were successfully loaded
+    datasets_loaded = []
+    if events_df is not None:
+        datasets_loaded.append("Events")
+    if weather_df is not None:
+        datasets_loaded.append("Weather")
+    if hotels_df is not None:
+        datasets_loaded.append("Hotels")
+    
+    if datasets_loaded:
+        print(f"\n🎉 Successfully loaded: {', '.join(datasets_loaded)}")
         print("💡 Ready for analysis and combination!")
         
         # Save cleaned datasets to CSV
@@ -653,6 +776,14 @@ def main():
             print(f"✅ Cleaned events data saved to: {events_output_file}")
             print(f"   Events records: {len(events_df)}")
         
+        # Save cleaned weather data
+        if weather_df is not None:
+            weather_output_file = 'Data/toronto_weather_cleaned.csv'
+            weather_df.to_csv(weather_output_file, index=False)
+            print(f"✅ Cleaned weather data saved to: {weather_output_file}")
+            print(f"   Weather records: {len(weather_df)}")
+            print(f"   Weather columns: {list(weather_df.columns)}")
+        
         # Save cleaned and transformed hotels data  
         if hotels_df is not None:
             hotels_output_file = 'Data/toronto_hotels_cleaned_transformed.csv'
@@ -661,7 +792,7 @@ def main():
             print(f"   Hotel records: {len(hotels_df)}")
             print(f"   Columns: {len(hotels_df.columns)}")
     else:
-        print("\n⚠️ Some data could not be loaded. Check file paths and run data generation scripts if needed.")
+        print("\n⚠️ No datasets could be loaded. Check file paths and run data generation scripts if needed.")
 
     # Show sample data and info
     if hotels_df is not None:
