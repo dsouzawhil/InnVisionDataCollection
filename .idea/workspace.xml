@@ -5,18 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b9e588fc-c260-420c-b77f-5d23650042e3" name="Changes" comment="new project">
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Data/Toronto_hotels.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Data/Toronto_hotels_2025-09-21.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Data/Toronto_hotels_2025-09-22.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Data/Toronto_hotels_2025-09-23.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Data/Toronto_hotels_2025-09-23_2025-09-30_to_2025-10-03.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Data/Toronto_hotels_2025-09-23_test.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Data/Toronto_hotels_2025-09-24_2025-10-10_to_2025-10-13.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/booking_scraper.py" beforeDir="false" afterPath="$PROJECT_DIR$/booking_scraper.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/daily_scheduler.py" beforeDir="false" afterPath="$PROJECT_DIR$/daily_scheduler.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/geteventsdata.py" beforeDir="false" afterPath="$PROJECT_DIR$/geteventsdata.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Data/get_weather.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Data/toronto_hotels_cleaned_transformed.csv" beforeDir="false" afterPath="$PROJECT_DIR$/Data/toronto_hotels_cleaned_transformed.csv" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Data/toronto_unified_hotel_analysis.csv" beforeDir="false" afterPath="$PROJECT_DIR$/Data/toronto_unified_hotel_analysis.csv" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/data_transformation.py" beforeDir="false" afterPath="$PROJECT_DIR$/data_transformation.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -46,8 +39,11 @@
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "Python.booking_scraper.executor": "Run",
     "Python.daily_scheduler.executor": "Run",
+    "Python.data_joining.executor": "Run",
     "Python.data_transformation.executor": "Run",
+    "Python.get_weather.executor": "Run",
     "Python.geteventsdata.executor": "Run",
+    "Python.hotel_price_eda.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
@@ -66,34 +62,10 @@
       <recent name="$PROJECT_DIR$/Data" />
     </key>
   </component>
-  <component name="RunManager">
-    <configuration default="true" type="PythonConfigurationType" factoryName="Python">
-      <module name="PythonProject" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="" />
-      <option name="IS_MODULE_SDK" value="false" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
-  </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
+        <option value="bundled-js-predefined-d6986cc7102b-b598e85cdad2-JavaScript-PY-252.25557.178" />
         <option value="bundled-python-sdk-ce6832f46686-7b97d883f26b-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-252.25557.178" />
       </set>
     </attachedChunks>
@@ -105,7 +77,8 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1758319126873</updated>
-      <workItem from="1758319142871" duration="69319000" />
+      <workItem from="1758319142871" duration="95998000" />
+      <workItem from="1759281533400" duration="14398000" />
     </task>
     <task id="LOCAL-00001" summary="new project">
       <option name="closed" value="true" />
@@ -160,8 +133,11 @@
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/PythonProject$geteventsdata.coverage" NAME="geteventsdata Coverage Results" MODIFIED="1758769866145" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/PythonProject$daily_scheduler.coverage" NAME="daily_scheduler Coverage Results" MODIFIED="1758736635042" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/PythonProject$data_transformation.coverage" NAME="data_transformation Coverage Results" MODIFIED="1758857127095" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/PythonProject$booking_scraper.coverage" NAME="booking_scraper Coverage Results" MODIFIED="1758683801396" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/PythonProject$data_joining.coverage" NAME="data_joining Coverage Results" MODIFIED="1759201952365" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/PythonProject$get_weather.coverage" NAME="get_weather Coverage Results" MODIFIED="1759184538858" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/PythonProject$data_transformation.coverage" NAME="data_transformation Coverage Results" MODIFIED="1759368460562" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/PythonProject$daily_scheduler.coverage" NAME="daily_scheduler Coverage Results" MODIFIED="1759453693491" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/PythonProject$booking_scraper.coverage" NAME="booking_scraper Coverage Results" MODIFIED="1759412237380" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/PythonProject$hotel_price_eda.coverage" NAME="hotel_price_eda Coverage Results" MODIFIED="1759453114045" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>

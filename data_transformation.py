@@ -700,6 +700,91 @@ def data_transformation(hotels_df):
     
     return hotels_transformed
 
+def add_holiday_flag(hotels_df):
+    """Add is_holiday column to indicate if any public holiday falls within the hotel stay period."""
+    if hotels_df is None:
+        print("❌ No hotel data provided for holiday flag calculation.")
+        return None
+    
+    print("🎄 Adding holiday flag...")
+    
+    # Import holidays library
+    try:
+        import holidays
+    except ImportError:
+        print("❌ The 'holidays' library is not installed.")
+        print("💡 Install it with: pip install holidays")
+        return hotels_df
+    
+    # Create a copy to avoid modifying original data
+    hotels_with_holidays = hotels_df.copy()
+    
+    # Get Canadian holidays from all provinces to capture all possible holidays
+    all_provinces = ['AB', 'BC', 'MB', 'NB', 'NL', 'NS', 'NT', 'NU', 'ON', 'PE', 'QC', 'SK', 'YT']
+    canada_holidays = holidays.Canada(years=[2025, 2026])
+    
+    # Add provincial holidays from all provinces
+    for prov in all_provinces:
+        prov_holidays = holidays.Canada(prov=prov, years=[2025, 2026])
+        canada_holidays.update(prov_holidays)
+    
+    print(f"📅 Using Canadian holidays from all provinces for years 2025-2026")
+    
+    def check_holiday_overlap(checkin, checkout):
+        """Check if any public holiday falls within the stay period (inclusive of checkin, exclusive of checkout)."""
+        if pd.isna(checkin) or pd.isna(checkout):
+            return None
+        
+        try:
+            checkin_date = pd.to_datetime(checkin).date()
+            checkout_date = pd.to_datetime(checkout).date()
+            
+            # Generate all dates in the stay period (including checkin, excluding checkout)
+            current_date = checkin_date
+            while current_date < checkout_date:
+                if current_date in canada_holidays:
+                    return True
+                current_date += timedelta(days=1)
+            
+            return False
+            
+        except Exception as e:
+            print(f"⚠️ Error checking holiday for dates {checkin} to {checkout}: {e}")
+            return None
+    
+    # Apply the holiday check function
+    if 'Check-in Date' in hotels_with_holidays.columns and 'Check-out Date' in hotels_with_holidays.columns:
+        hotels_with_holidays['is_holiday'] = hotels_with_holidays.apply(
+            lambda row: check_holiday_overlap(row['Check-in Date'], row['Check-out Date']), 
+            axis=1
+        )
+        
+        valid_holiday_flags = hotels_with_holidays['is_holiday'].notna().sum()
+        holiday_stays = hotels_with_holidays['is_holiday'].sum() if hotels_with_holidays['is_holiday'].notna().any() else 0
+        
+        print(f"   ✅ Calculated holiday flag for {valid_holiday_flags} bookings")
+        print(f"   🎉 {holiday_stays} bookings include public holidays")
+        
+        # Show which holidays are affecting bookings
+        if holiday_stays > 0:
+            print(f"   📋 Sample holidays in 2025 (Ontario):")
+            
+            # Get holidays for 2025 (main year for our data)
+            holidays_2025 = {date: name for date, name in canada_holidays.items() if date.year == 2025}
+            
+            # Show first 10 holidays as examples
+            for i, (date, name) in enumerate(list(holidays_2025.items())[:10]):
+                print(f"      {date}: {name}")
+            
+            if len(holidays_2025) > 10:
+                print(f"      ... and {len(holidays_2025) - 10} more holidays in 2025")
+    else:
+        print("   ❌ Required date columns not found for holiday calculation")
+        return hotels_df
+    
+    print(f"✅ Holiday flag added. DataFrame now has {len(hotels_with_holidays.columns)} columns.")
+    return hotels_with_holidays
+
 def main():
 
     print("\n1️⃣ Loading Events Data...")
@@ -732,6 +817,10 @@ def main():
     if hotels_df is not None:
         print("\n4️⃣ Transforming Hotel Data...")
         hotels_df = data_transformation(hotels_df)
+        
+        # Add holiday flag
+        print("\n4️⃣.1 Adding Holiday Flag...")
+        hotels_df = add_holiday_flag(hotels_df)
 
     # Summary
     print("\n" + "="*45)
