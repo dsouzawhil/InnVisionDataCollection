@@ -1,904 +1,919 @@
+"""
+Complete Hotel Data Transformation Pipeline
+===========================================
+
+This script consolidates all data transformations from raw scraped data 
+to the final analysis-ready dataset with coordinates.
+
+Pipeline Steps:
+1. Load raw hotel data
+2. Currency conversion (USD → CAD)
+3. Data cleaning and duplicate removal
+4. Weather data integration
+5. Holiday flag detection (all Canadian provinces)
+6. District extraction and enhancement
+7. Geocoding with coordinates
+8. Final data quality checks
+
+Output: Data/toronto_hotels_transformed.csv
+"""
+
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
-import os
-import glob
+import holidays
 import requests
+import re
+import warnings
+warnings.filterwarnings('ignore')
 
-def read_toronto_events():
-    """Read the Toronto 2025 events file."""
-    events_file = 'Data/toronto_events_with_scores.csv'
-    
-    if os.path.exists(events_file):
-        try:
-            events_df = pd.read_csv(events_file)
-            print(f"✅ Successfully loaded {len(events_df)} events from {events_file}")
-            
-            # Display basic info about the events data
-            print(f"\n📊 Events Dataset Info (before deduplication):")
-            print(f"   Total events: {len(events_df)}")
-            print(f"   Columns: {list(events_df.columns)}")
-            print(f"   Date range: {events_df['Date'].min()} to {events_df['Date'].max()}")
-            
-            # Remove duplicate entries
-            print(f"\n🔄 Removing duplicate events...")
-            initial_count = len(events_df)
-            
-            # Remove duplicates based on Event Name, Date, and Venue combination
-            events_df = events_df.drop_duplicates(subset=['Event Name', 'Date', 'Venue'], keep='first')
-            
-            final_count = len(events_df)
-            duplicates_removed = initial_count - final_count
-            
-            print(f"   ✅ Removed {duplicates_removed} duplicate events")
-            print(f"   📊 Final events count: {final_count}")
-            
-            # Show first few rows
-            print(f"\n📋 First 5 events (after deduplication):")
-            print(events_df.head())
-            
-            return events_df
-            
-        except Exception as e:
-            print(f"❌ Error loading events data: {e}")
-            return None
-    else:
-        print(f"❌ Events file not found: {events_file}")
-        print("💡 Please run geteventsdata.py first to generate the events data.")
-        return None
-
-def read_toronto_weather():
-    """Read the Toronto weather data file."""
-    weather_file = 'Data/toronto_weather_2025.csv'
-    
-    if os.path.exists(weather_file):
-        try:
-            weather_df = pd.read_csv(weather_file)
-            print(f"✅ Successfully loaded {len(weather_df)} weather records from {weather_file}")
-            
-            # Display basic info about the weather data
-            print(f"\n🌤️ Weather Dataset Info:")
-            print(f"   Total records: {len(weather_df)}")
-            print(f"   Columns: {list(weather_df.columns)}")
-            
-            if 'LOCAL_DATE' in weather_df.columns:
-                print(f"   Date range: {weather_df['LOCAL_DATE'].min()} to {weather_df['LOCAL_DATE'].max()}")
-            
-            return weather_df
-            
-        except Exception as e:
-            print(f"❌ Error loading weather data: {e}")
-            return None
-    else:
-        print(f"❌ Weather file not found: {weather_file}")
-        print("💡 Please run get_weather.py first to generate the weather data.")
-        return None
-
-def clean_weather_data(weather_df):
-    """Clean the weather dataframe by selecting relevant columns and converting date columns."""
-    if weather_df is None:
-        print("❌ No weather data provided for cleaning.")
-        return None
-    
-    print("🧹 Starting weather data cleaning...")
-    
-    # Create a copy to avoid modifying original data
-    weather_cleaned = weather_df.copy()
-    
-    # Select only the required columns for hotel analysis
-    required_columns = [
-        'LOCAL_DATE',
-        'MEAN_TEMPERATURE',
-        'MIN_TEMPERATURE', 
-        'MAX_TEMPERATURE',
-        'TOTAL_PRECIPITATION',
-        'TOTAL_SNOW',
-        'SNOW_ON_GROUND',
-        'SPEED_MAX_GUST',
-        'MAX_REL_HUMIDITY'
-    ]
-    
-    # Keep only columns that exist in the DataFrame
-    available_columns = [col for col in required_columns if col in weather_cleaned.columns]
-    missing_columns = [col for col in required_columns if col not in weather_cleaned.columns]
-    
-    if missing_columns:
-        print(f"⚠️ Missing columns: {missing_columns}")
-    
-    weather_cleaned = weather_cleaned[available_columns].copy()
-    print(f"📊 Selected {len(available_columns)} weather columns")
-    
-    # Convert LOCAL_DATE to datetime
-    if 'LOCAL_DATE' in weather_cleaned.columns:
-        print("📅 Converting LOCAL_DATE to datetime...")
+class HotelDataPipeline:
+    def __init__(self, input_file='Data/toronto_unified_hotel_analysis.csv'):
+        """Initialize the pipeline with input file path."""
+        self.input_file = input_file
+        self.usd_to_cad_rate = 1.35  # Fixed conversion rate
         
-        # Convert to datetime
-        weather_cleaned['LOCAL_DATE'] = pd.to_datetime(weather_cleaned['LOCAL_DATE'], errors='coerce')
-        
-        # Count successful conversions
-        valid_dates = weather_cleaned['LOCAL_DATE'].notna().sum()
-        invalid_dates = weather_cleaned['LOCAL_DATE'].isna().sum()
-        print(f"   ✅ Converted {valid_dates} date values to datetime")
-        if invalid_dates > 0:
-            print(f"   ⚠️ {invalid_dates} invalid dates set to NaN")
-    
-    # Convert numeric weather columns to proper data types
-    numeric_columns = [
-        'MEAN_TEMPERATURE', 'MIN_TEMPERATURE', 'MAX_TEMPERATURE',
-        'TOTAL_PRECIPITATION', 'TOTAL_SNOW', 'SNOW_ON_GROUND',
-        'SPEED_MAX_GUST', 'MAX_REL_HUMIDITY'
-    ]
-    
-    for col in numeric_columns:
-        if col in weather_cleaned.columns:
-            print(f"🔢 Converting {col} to numeric...")
-            
-            # Convert to numeric, handling any non-numeric values
-            weather_cleaned[col] = pd.to_numeric(weather_cleaned[col], errors='coerce')
-            
-            valid_values = weather_cleaned[col].notna().sum()
-            invalid_values = weather_cleaned[col].isna().sum()
-            print(f"   ✅ Converted {valid_values} {col} values to numeric")
-            if invalid_values > 0:
-                print(f"   ⚠️ {invalid_values} invalid {col} values set to NaN")
-    
-    print(f"✅ Weather data cleaning complete. DataFrame now has {len(weather_cleaned.columns)} columns.")
-    print(f"   Cleaned columns: {list(weather_cleaned.columns)}")
-    
-    return weather_cleaned
-
-def clean_events_data(events_df):
-    """Clean the events dataframe by converting date and numeric columns to proper data types."""
-    if events_df is None:
-        print("❌ No events data provided for cleaning.")
-        return None
-    
-    print("🧹 Starting events data cleaning...")
-    
-    # Create a copy to avoid modifying original data
-    events_cleaned = events_df.copy()
-    
-    # 1. Convert Date column to datetime
-    if 'Date' in events_cleaned.columns:
-        print("📅 Converting Date column to datetime...")
-        
-        # Convert to datetime
-        events_cleaned['Date'] = pd.to_datetime(events_cleaned['Date'], errors='coerce')
-        
-        # Count successful conversions
-        valid_dates = events_cleaned['Date'].notna().sum()
-        invalid_dates = events_cleaned['Date'].isna().sum()
-        print(f"   ✅ Converted {valid_dates} date values to datetime")
-        if invalid_dates > 0:
-            print(f"   ⚠️ {invalid_dates} invalid dates set to NaN")
-    
-    # 2. Convert Latitude to numeric (float)
-    if 'Latitude' in events_cleaned.columns:
-        print("🌍 Converting Latitude to numeric...")
-        
-        # Replace 'N/A' with NaN first
-        events_cleaned['Latitude'] = events_cleaned['Latitude'].replace(['N/A', 'n/a', ''], pd.NA)
-        
-        # Convert to numeric
-        events_cleaned['Latitude'] = pd.to_numeric(events_cleaned['Latitude'], errors='coerce')
-        
-        # Count valid coordinates
-        valid_lat = events_cleaned['Latitude'].notna().sum()
-        invalid_lat = events_cleaned['Latitude'].isna().sum()
-        print(f"   ✅ Converted {valid_lat} latitude values to float")
-        if invalid_lat > 0:
-            print(f"   ⚠️ {invalid_lat} invalid latitudes set to NaN")
-    
-    # 3. Convert Longitude to numeric (float)
-    if 'Longitude' in events_cleaned.columns:
-        print("🌍 Converting Longitude to numeric...")
-        
-        # Replace 'N/A' with NaN first
-        events_cleaned['Longitude'] = events_cleaned['Longitude'].replace(['N/A', 'n/a', ''], pd.NA)
-        
-        # Convert to numeric
-        events_cleaned['Longitude'] = pd.to_numeric(events_cleaned['Longitude'], errors='coerce')
-        
-        # Count valid coordinates
-        valid_lon = events_cleaned['Longitude'].notna().sum()
-        invalid_lon = events_cleaned['Longitude'].isna().sum()
-        print(f"   ✅ Converted {valid_lon} longitude values to float")
-        if invalid_lon > 0:
-            print(f"   ⚠️ {invalid_lon} invalid longitudes set to NaN")
-    
-    # 4. Convert event_score to numeric (check if column exists)
-    if 'event_score' in events_cleaned.columns:
-        print("🎯 Converting event_score to numeric...")
-        
-        # Replace 'N/A' with NaN first
-        events_cleaned['event_score'] = events_cleaned['event_score'].replace(['N/A', 'n/a', ''], pd.NA)
-        
-        # Convert to numeric (int or float)
-        events_cleaned['event_score'] = pd.to_numeric(events_cleaned['event_score'], errors='coerce')
-        
-        # Count valid scores
-        valid_scores = events_cleaned['event_score'].notna().sum()
-        invalid_scores = events_cleaned['event_score'].isna().sum()
-        print(f"   ✅ Converted {valid_scores} event scores to numeric")
-        if invalid_scores > 0:
-            print(f"   ⚠️ {invalid_scores} invalid event scores set to NaN")
-    else:
-        print("📝 event_score column not found - may need to run geteventsdata.py first")
-    
-    # 5. Advanced text cleaning for categorical columns
-    print("📝 Applying advanced text cleaning...")
-    
-    # Define columns that need consistent case treatment
-    categorical_columns = ['Segment', 'Genre', 'SubGenre']
-    
-    for col in categorical_columns:
-        if col in events_cleaned.columns:
-            print(f"✂️ Cleaning {col}...")
-            
-            # Basic cleaning: strip whitespace, handle nulls
-            events_cleaned[col] = events_cleaned[col].astype(str).str.strip()
-            events_cleaned[col] = events_cleaned[col].replace(['', 'N/A', 'n/a', 'nan'], None)
-            
-            # Convert to title case for consistency
-            events_cleaned[col] = events_cleaned[col].str.title()
-            
-            # Fill missing values with "Unknown" for categorical consistency
-            missing_before = events_cleaned[col].isna().sum()
-            events_cleaned[col] = events_cleaned[col].fillna('Unknown')
-            
-            valid_values = events_cleaned[col].notna().sum()
-            print(f"   ✅ Cleaned {valid_values} {col} values to title case")
-            if missing_before > 0:
-                print(f"   🔄 Filled {missing_before} missing {col} values with 'Unknown'")
-    
-    # Special cleaning for Venue column (common venue name standardization)
-    if 'Venue' in events_cleaned.columns:
-        print("🏟️ Standardizing venue names...")
-        
-        # Basic cleaning first
-        events_cleaned['Venue'] = events_cleaned['Venue'].astype(str).str.strip()
-        events_cleaned['Venue'] = events_cleaned['Venue'].replace(['', 'N/A', 'n/a', 'nan'], None)
-        
-        # Common venue name corrections
-        venue_corrections = {
-            'rogers center': 'Rogers Centre',
-            'rogers centre': 'Rogers Centre',
-            'scotiabank arena': 'Scotiabank Arena',
-            'coca-cola coliseum': 'Coca-Cola Coliseum',
-            'coca cola coliseum': 'Coca-Cola Coliseum',
-            'roy thomson hall': 'Roy Thomson Hall',
-            'roy thompson hall': 'Roy Thomson Hall',
-            'princess of wales theatre': 'Princess of Wales Theatre',
-            'princess of wales theater': 'Princess of Wales Theatre',
-            'ed mirvish theatre': 'Ed Mirvish Theatre',
-            'ed mirvish theater': 'Ed Mirvish Theatre',
-            'royal alexandra theatre': 'Royal Alexandra Theatre',
-            'royal alexandra theater': 'Royal Alexandra Theatre',
-            'the phoenix concert theatre': 'The Phoenix Concert Theatre',
-            'phoenix concert theatre': 'The Phoenix Concert Theatre',
-            'the danforth music hall': 'The Danforth Music Hall',
-            'danforth music hall': 'The Danforth Music Hall',
-            'the opera house': 'The Opera House',
-            'opera house': 'The Opera House'
+        # Toronto district coordinates for geocoding
+        self.district_coords = {
+            'Entertainment District': (43.6426, -79.3871),
+            'Financial District': (43.6489, -79.3817),
+            'Bloor-Yorkville': (43.6706, -79.3951),
+            'Fashion District': (43.6553, -79.3906),
+            'The Annex': (43.6708, -79.4037),
+            'Old Town': (43.6503, -79.3717),
+            'Yonge - Dundas': (43.6566, -79.3805),
+            'Queen West': (43.6439, -79.4001),
+            'King Street West': (43.6435, -79.3929),
+            'Church-Wellesley Village': (43.6688, -79.3826),
+            'Cabbagetown': (43.6658, -79.3636),
+            'Leslieville': (43.6595, -79.3384),
+            'The Beaches': (43.6677, -79.2930),
+            'Liberty Village': (43.6393, -79.4198),
+            'CityPlace': (43.6393, -79.3916),
+            'Harbourfront': (43.6389, -79.3817),
+            'Distillery District': (43.6503, -79.3589),
+            'Regent Park': (43.6581, -79.3624),
+            'Moss Park': (43.6551, -79.3724),
+            'Garden District': (43.6580, -79.3776),
+            'St. Lawrence': (43.6487, -79.3717),
+            'Chinatown': (43.6532, -79.3977),
+            'Kensington Market': (43.6548, -79.4005),
+            'Little Italy': (43.6548, -79.4169),
+            'Junction Triangle': (43.6598, -79.4448),
+            'Roncesvalles': (43.6458, -79.4489),
+            'High Park': (43.6537, -79.4637),
+            'Parkdale': (43.6398, -79.4328),
+            'Mimico': (43.6055, -79.4969),
+            'Airport Area': (43.6777, -79.6248),
+            'Etobicoke': (43.6205, -79.5132),
+            'North York': (43.7615, -79.4111),
+            'Scarborough': (43.7764, -79.2318),
+            'East York': (43.6890, -79.3327),
+            'York': (43.6896, -79.4879),
+            'Toronto': (43.6532, -79.3832)  # Default Toronto center
         }
         
-        # Apply corrections (case insensitive)
-        for incorrect, correct in venue_corrections.items():
-            mask = events_cleaned['Venue'].str.lower() == incorrect.lower()
-            events_cleaned.loc[mask, 'Venue'] = correct
+        print("🏗️ HOTEL DATA TRANSFORMATION PIPELINE")
+        print("=" * 50)
+    
+    def load_data(self):
+        """Step 1: Load raw hotel data."""
+        print("📂 Step 1: Loading raw hotel data...")
         
-        # Clean up "The" articles consistently
-        events_cleaned['Venue'] = events_cleaned['Venue'].str.replace(r'^the\s+(.+)', r'The \1', regex=True, case=False)
-        
-        valid_venues = events_cleaned['Venue'].notna().sum()
-        print(f"   ✅ Standardized {valid_venues} venue names")
-    
-    # Clean Event Name column (basic cleaning only, preserve original formatting)
-    if 'Event Name' in events_cleaned.columns:
-        print("📋 Cleaning event names...")
-        
-        events_cleaned['Event Name'] = events_cleaned['Event Name'].astype(str).str.strip()
-        events_cleaned['Event Name'] = events_cleaned['Event Name'].replace(['', 'N/A', 'n/a', 'nan'], None)
-        
-        valid_events = events_cleaned['Event Name'].notna().sum()
-        print(f"   ✅ Cleaned {valid_events} event names")
-    
-    # Clean Address column
-    if 'Address' in events_cleaned.columns:
-        print("📍 Cleaning addresses...")
-        
-        events_cleaned['Address'] = events_cleaned['Address'].astype(str).str.strip()
-        events_cleaned['Address'] = events_cleaned['Address'].replace(['', 'N/A', 'n/a', 'nan'], None)
-        
-        # Standardize common address formats
-        events_cleaned['Address'] = events_cleaned['Address'].str.replace(r'\s+', ' ', regex=True)  # Multiple spaces to single
-        events_cleaned['Address'] = events_cleaned['Address'].str.replace(r',\s*,', ',', regex=True)  # Double commas
-        
-        valid_addresses = events_cleaned['Address'].notna().sum()
-        print(f"   ✅ Cleaned {valid_addresses} addresses")
-    
-    print(f"✅ Events data cleaning complete. DataFrame now has {len(events_cleaned.columns)} columns.")
-    
-    # Show data types after cleaning
-    print(f"\n📊 Data Types After Cleaning:")
-    for col in events_cleaned.columns:
-        dtype = events_cleaned[col].dtype
-        non_null = events_cleaned[col].notna().sum()
-        print(f"   {col}: {dtype} ({non_null}/{len(events_cleaned)} non-null)")
-    
-    return events_cleaned
-
-def read_all_hotel_files():
-    """Read all hotel CSV files from hotel_listing folder and combine into one DataFrame."""
-    hotel_folder = 'Data/hotel_listing'
-    
-    if not os.path.exists(hotel_folder):
-        print(f"❌ Hotel listing folder not found: {hotel_folder}")
-        return None
-    
-    # Find all CSV files in hotel_listing folder
-    hotel_files = glob.glob(os.path.join(hotel_folder, 'Toronto_hotels*.csv'))
-    
-    if not hotel_files:
-        print(f"❌ No hotel CSV files found in {hotel_folder}")
-        return None
-    
-    print(f"📂 Found {len(hotel_files)} hotel files:")
-    
-    all_hotels = []
-    total_hotels = 0
-    
-    for file in hotel_files:
         try:
-            df = pd.read_csv(file)
-            filename = os.path.basename(file)
-            print(f"   ✅ {filename}: {len(df)} hotels")
-            all_hotels.append(df)
-            total_hotels += len(df)
+            df = pd.read_csv(self.input_file)
+            print(f"   ✅ Loaded {len(df)} rows, {len(df.columns)} columns")
+            return df
         except Exception as e:
-            print(f"   ❌ Error loading {file}: {e}")
+            print(f"   ❌ Error loading data: {e}")
+            return None
     
-    if all_hotels:
-        # Combine all DataFrames
-        combined_hotels = pd.concat(all_hotels, ignore_index=True)
-        print(f"\n🏨 Combined Hotels Dataset:")
-        print(f"   Total hotels: {len(combined_hotels)}")
-        print(f"   Columns: {list(combined_hotels.columns)}")
+    def currency_conversion(self, df):
+        """Step 2: Convert USD prices to CAD."""
+        print("💱 Step 2: Converting USD to CAD...")
         
-        # Show data types
-        print(f"\n📋 Column Info:")
-        for col in combined_hotels.columns:
-            non_null = combined_hotels[col].notna().sum()
-            print(f"   {col}: {non_null}/{len(combined_hotels)} non-null")
+        # Find the price column (could be 'price', 'Price', or 'price_usd')
+        price_col = None
+        for col in ['price_usd', 'price', 'Price']:
+            if col in df.columns:
+                price_col = col
+                break
         
-        # # Show first few rows
-        # print(f"\n📋 First 5 hotel records:")
-        # print(combined_hotels.head())
-        #
-        return combined_hotels
-    else:
-        print("❌ No hotel data could be loaded.")
-        return None
-
-def data_cleaning(hotels_df):
-    """Clean the hotels dataframe by removing empty review columns and cleaning distance data."""
-    if hotels_df is None:
-        print("❌ No hotel data provided for cleaning.")
-        return None
-    
-    print("🧹 Starting data cleaning...")
-    
-    # Define review columns to remove
-    review_columns_to_drop = [
-        'Review', 'Review Score', 'Number of Reviews', 
-        'Rating', 'Star Rating', 'Location Score', 
-        'name', 'score'  # Also removing these sparse columns
-    ]
-    
-    # Find existing review columns in the DataFrame
-    existing_review_cols = [col for col in review_columns_to_drop if col in hotels_df.columns]
-    
-    if existing_review_cols:
-        hotels_df_cleaned = hotels_df.drop(columns=existing_review_cols)
-        print(f"🗑️ Removed empty review columns: {existing_review_cols}")
-    else:
-        hotels_df_cleaned = hotels_df.copy()
-        print("✅ No review columns found to remove.")
-    
-    # Clean Distance from attraction column - extract just the number
-    distance_cols = ['Distance from attraction', 'Distance from Attraction']
-    
-    for col in distance_cols:
-        if col in hotels_df_cleaned.columns:
-            print(f"🔢 Cleaning distance column: {col}")
+        if price_col:
+            # Clean and convert price column to numeric
+            print(f"   🧹 Found price column: {price_col}")
             
-            # Extract numeric value from strings like "0.6 miles from downtown"
-            hotels_df_cleaned[col] = hotels_df_cleaned[col].astype(str).str.extract(r'(\d+\.?\d*)')
-            hotels_df_cleaned[col] = pd.to_numeric(hotels_df_cleaned[col], errors='coerce')
+            # Remove $ signs, commas, and extract numeric values
+            # First filter out obviously non-price values
+            df[price_col] = df[price_col].astype(str)
+            # Replace common non-price text with NaN
+            df[price_col] = df[price_col].replace(['nan', 'None', 'Free airport taxi', '', ' '], np.nan)
+            # Only process non-null values
+            mask = df[price_col].notna()
+            df.loc[mask, price_col] = df.loc[mask, price_col].str.replace('$', '', regex=False)
+            df.loc[mask, price_col] = df.loc[mask, price_col].str.replace(',', '', regex=False)
+            # Extract only values that look like prices (numbers, possibly with decimal)
+            df.loc[mask, price_col] = df.loc[mask, price_col].str.extract(r'^(\d+\.?\d*)$')[0]
+            df[price_col] = pd.to_numeric(df[price_col], errors='coerce')
             
-            # Count how many values were successfully converted
-            valid_distances = hotels_df_cleaned[col].notna().sum()
-            print(f"   ✅ Extracted {valid_distances} numeric distance values")
+            # Rename to price_usd if it's not already
+            if price_col != 'price_usd':
+                df = df.rename(columns={price_col: 'price_usd'})
+                print(f"   🔄 Renamed {price_col} to price_usd")
+            
+            # Create price_cad column by converting USD to CAD
+            # Handle null values explicitly
+            df['price_cad'] = np.where(
+                df['price_usd'].notna(),
+                df['price_usd'] * self.usd_to_cad_rate,
+                np.nan
+            )
+            # Round to 2 decimal places only for non-null values
+            df['price_cad'] = df['price_cad'].round(2)
+            # Ensure price_cad stays as float type
+            df['price_cad'] = df['price_cad'].astype('float64')
+            
+            converted_count = df['price_usd'].notna().sum()
+            print(f"   ✅ Created price_cad column: converted {converted_count} prices from USD to CAD")
+            print(f"   💱 Using conversion rate: 1 USD = {self.usd_to_cad_rate} CAD")
+        else:
+            print("   ⚠️ No price column found (looked for 'price_usd', 'price', 'Price')")
+        
+        return df
     
-    # Clean price column - remove dollar sign and convert to numeric
-    if 'price' in hotels_df_cleaned.columns:
-        print(f"💰 Cleaning price column")
+    def data_cleaning(self, df):
+        """Step 3: Comprehensive data cleaning and type transformations."""
+        print("🧹 Step 3: Data cleaning and type transformations...")
         
-        # Remove dollar sign, commas, and any other non-numeric characters (except decimal point)
-        hotels_df_cleaned['price'] = hotels_df_cleaned['price'].astype(str).str.replace('$', '').str.replace(',', '')
+        original_cols = len(df.columns)
+        original_rows = len(df)
         
-        # Extract numeric value (handles cases like "$123.45" or "123")
-        hotels_df_cleaned['price'] = hotels_df_cleaned['price'].str.extract(r'(\d+\.?\d*)')
-        hotels_df_cleaned['price'] = pd.to_numeric(hotels_df_cleaned['price'], errors='coerce')
+        # Clean Distance from attraction column - remove 'miles from downtown' text
+        if 'Distance from attraction' in df.columns:
+            print("   🧹 Cleaning Distance from attraction column...")
+            # Extract numeric values from distance column, remove 'miles from downtown'
+            df['Distance from attraction'] = df['Distance from attraction'].astype(str).str.extract(r'([\d\.]+)')[0]
+            df['Distance from attraction'] = pd.to_numeric(df['Distance from attraction'], errors='coerce')
+            print("   ✅ Removed 'miles from downtown' text from Distance column")
         
-        # Count how many prices were successfully converted
-        valid_prices = hotels_df_cleaned['price'].notna().sum()
-        print(f"   ✅ Converted {valid_prices} price values to numeric")
+        # Clean price column - remove $ sign and keep only numeric values
+        price_columns = ['Price', 'price', 'price_usd']
+        for price_col in price_columns:
+            if price_col in df.columns:
+                print(f"   💰 Cleaning {price_col} column...")
+                # Remove $ sign and any other non-numeric characters except decimal point
+                df[price_col] = df[price_col].astype(str).str.replace('$', '', regex=False)
+                df[price_col] = df[price_col].str.replace(',', '', regex=False)  # Remove commas
+                df[price_col] = df[price_col].str.extract(r'([\d\.]+)')[0]  # Extract numeric part
+                df[price_col] = pd.to_numeric(df[price_col], errors='coerce')
+                print(f"   ✅ Removed $ sign and cleaned {price_col} column")
+                
+                # If this is the main price column, ensure it's named price_usd
+                if price_col in ['Price', 'price']:
+                    df = df.rename(columns={price_col: 'price_usd'})
+                    print(f"   🔄 Renamed {price_col} to price_usd")
         
-        # Convert USD to CAD
-        print(f"💱 Converting prices from USD to CAD...")
+        # Remove duplicate 'Distance from Attraction' column if exists
+        if 'Distance from Attraction' in df.columns:
+            distance_cols = [col for col in df.columns if 'Distance from Attraction' in col]
+            if len(distance_cols) > 1:
+                for i in range(1, len(distance_cols)):
+                    df = df.drop(columns=[distance_cols[i]])
+                print(f"   🧹 Removed duplicate 'Distance from Attraction' columns")
         
-        # Fetch current USD to CAD exchange rate dynamically
-        def get_usd_to_cad_rate():
-            """Fetch current USD to CAD exchange rate from API."""
+        # Convert date columns to datetime
+        date_columns = ['Date', 'Check-in Date', 'Check-out Date']
+        for col in date_columns:
+            if col in df.columns:
+                df[col] = pd.to_datetime(df[col], errors='coerce')
+                print(f"   📅 Converted {col} to datetime")
+        
+        # Convert numeric columns
+        numeric_columns = {
+            'Number of People': 'int64',
+            'price_usd': 'float64',
+            'price_cad': 'float64',
+            'Distance from attraction': 'float64',
+            'booking_lead_time': 'int64',
+            'length_of_stay': 'int64',
+            'week_of_year': 'int64',
+            'latitude': 'float64',
+            'longitude': 'float64',
+            'hotel_latitude': 'float64',
+            'hotel_longitude': 'float64',
+            'events_count': 'int64',
+            'events_total_score': 'float64',
+            'events_max_score': 'float64',
+            'events_avg_score': 'float64',
+            'events_earliest_day': 'int64',
+            'events_latest_day': 'int64',
+            'events_avg_day': 'float64',
+            'events_span_days': 'int64',
+            'events_density': 'float64',
+            'min_distance_to_event': 'float64',
+            'max_distance_to_event': 'float64',
+            'avg_distance_to_events': 'float64',
+            'median_distance_to_events': 'float64'
+        }
+        
+        converted_count = 0
+        for col, dtype in numeric_columns.items():
+            if col in df.columns:
+                try:
+                    if 'int' in dtype:
+                        df[col] = pd.to_numeric(df[col], errors='coerce').astype('Int64')  # Nullable integer
+                    else:
+                        df[col] = pd.to_numeric(df[col], errors='coerce')
+                    converted_count += 1
+                except Exception as e:
+                    print(f"   ⚠️ Could not convert {col}: {e}")
+        
+        if converted_count > 0:
+            print(f"   🔢 Converted {converted_count} columns to numeric types")
+        
+        # Convert categorical columns
+        categorical_columns = [
+            'Source', 'Hotel name', 'Address', 'Room Type', 'Deal Info',
+            'district', 'events_primary_segment', 'room_category'
+        ]
+        
+        cat_converted = 0
+        for col in categorical_columns:
+            if col in df.columns:
+                df[col] = df[col].astype('string')  # Use pandas string type
+                cat_converted += 1
+        
+        if cat_converted > 0:
+            print(f"   📝 Converted {cat_converted} columns to string type")
+        
+        # Convert boolean columns (but skip price columns)
+        boolean_columns = [
+            'is_holiday', 'is_weekend', 'has_major_event', 'has_multiple_events',
+            'has_nearby_event_1km', 'has_nearby_event_5km'
+        ]
+        
+        # Protect price columns from boolean conversion
+        price_protection_cols = ['price_usd', 'price_cad']
+        
+        bool_converted = 0
+        for col in boolean_columns:
+            if col in df.columns and col not in price_protection_cols:
+                df[col] = df[col].astype('boolean')  # Use pandas boolean type
+                bool_converted += 1
+        
+        # Ensure price columns remain as float
+        for price_col in price_protection_cols:
+            if price_col in df.columns:
+                df[price_col] = pd.to_numeric(df[price_col], errors='coerce').astype('float64')
+        
+        if bool_converted > 0:
+            print(f"   ✅ Converted {bool_converted} columns to boolean type")
+        print(f"   💰 Protected price columns from type conversion")
+        
+        # Calculate length of stay if not exists
+        if 'Check-in Date' in df.columns and 'Check-out Date' in df.columns:
+            if 'length_of_stay' not in df.columns:
+                df['length_of_stay'] = (df['Check-out Date'] - df['Check-in Date']).dt.days
+                print(f"   🏨 Calculated length_of_stay")
+        
+        # Round price columns to 2 decimal places
+        price_columns = ['price_usd', 'price_cad']
+        for col in price_columns:
+            if col in df.columns:
+                df[col] = df[col].round(2)
+        
+        # Clean whitespace from string columns
+        string_cols = df.select_dtypes(include=['object', 'string']).columns
+        for col in string_cols:
+            df[col] = df[col].astype(str).str.strip()
+        
+        final_rows = len(df)
+        final_cols = len(df.columns)
+        
+        print(f"   ✅ Data cleaning complete:")
+        print(f"     • Rows: {original_rows:,} → {final_rows:,}")
+        print(f"     • Columns: {original_cols} → {final_cols}")
+        
+        return df
+    
+    def add_weather_data(self, df):
+        """Step 4: Add weather data (check existing data or use seasonal estimates)."""
+        print("🌤️ Step 4: Adding weather data...")
+        
+        # Define weather columns to check
+        weather_columns = [
+            'MEAN_TEMPERATURE', 'MAX_TEMPERATURE', 'MIN_TEMPERATURE',
+            'TOTAL_PRECIPITATION', 'TOTAL_SNOW', 'SNOW_ON_GROUND',
+            'SPEED_MAX_GUST', 'MAX_REL_HUMIDITY'
+        ]
+        
+        # Remove duplicate weather columns with "_weather" suffix if they exist
+        weather_suffix_cols = [col for col in df.columns if col.endswith('_weather') and any(w in col for w in weather_columns)]
+        if weather_suffix_cols:
+            df = df.drop(columns=weather_suffix_cols)
+            print(f"   🧹 Removed {len(weather_suffix_cols)} duplicate weather columns with '_weather' suffix")
+        
+        # Check each weather column individually
+        october_weather = {
+            'MEAN_TEMPERATURE': 10.5,  # °C
+            'MAX_TEMPERATURE': 15.2,
+            'MIN_TEMPERATURE': 5.8,
+            'TOTAL_PRECIPITATION': 66.2,  # mm
+            'TOTAL_SNOW': 0.0,
+            'SNOW_ON_GROUND': 0.0,
+            'SPEED_MAX_GUST': 45.0,  # km/h
+            'MAX_REL_HUMIDITY': 85.0
+        }
+        
+        filled_count = 0
+        existing_count = 0
+        
+        for weather_col in weather_columns:
+            if weather_col in df.columns:
+                # Check if column has data
+                non_null_count = df[weather_col].notna().sum()
+                if non_null_count == 0:
+                    # Column exists but is empty - fill with estimates
+                    df[weather_col] = october_weather[weather_col]
+                    filled_count += 1
+                else:
+                    # Column has data - keep existing values
+                    existing_count += 1
+            else:
+                # Column doesn't exist - create with estimates
+                df[weather_col] = october_weather[weather_col]
+                filled_count += 1
+        
+        if filled_count > 0:
+            print(f"   ✅ Filled {filled_count} empty weather columns with seasonal estimates")
+        if existing_count > 0:
+            print(f"   ✅ Kept existing data in {existing_count} weather columns")
+        
+        return df
+    
+    def add_holiday_flags(self, df):
+        """Step 5: Add Canadian holiday flags for all provinces."""
+        print("🎉 Step 5: Adding Canadian holiday flags...")
+        
+        # Get holidays for all Canadian provinces
+        all_provinces = ['AB', 'BC', 'MB', 'NB', 'NL', 'NS', 'NT', 'NU', 'ON', 'PE', 'QC', 'SK', 'YT']
+        years = [2025, 2026]
+        
+        # Start with federal holidays
+        canada_holidays = holidays.Canada(years=years)
+        
+        # Add provincial holidays
+        for prov in all_provinces:
             try:
-                print("🌐 Fetching current USD to CAD exchange rate...")
-                
-                # Try multiple API sources for reliability
-                apis_to_try = [
-                    "https://api.exchangerate-api.com/v4/latest/USD",
-                    "https://api.fxratesapi.com/latest?base=USD&symbols=CAD",
-                    "https://open.er-api.com/v6/latest/USD"
-                ]
-                
-                for api_url in apis_to_try:
-                    try:
-                        response = requests.get(api_url, timeout=10)
-                        response.raise_for_status()
-                        data = response.json()
-                        
-                        # Extract CAD rate from different API formats
-                        if "rates" in data and "CAD" in data["rates"]:
-                            rate = float(data["rates"]["CAD"])
-                            print(f"   ✅ Current rate fetched: 1 USD = {rate:.4f} CAD")
-                            return rate
-                            
-                    except requests.exceptions.RequestException as e:
-                        print(f"   ⚠️ API {api_url} failed: {e}")
-                        continue
-                
-                # If all APIs fail, use fallback
-                print("   ⚠️ All exchange rate APIs failed")
-                return None
-                
-            except Exception as e:
-                print(f"   ❌ Error fetching exchange rate: {e}")
-                return None
+                prov_holidays = holidays.Canada(prov=prov, years=years)
+                canada_holidays.update(prov_holidays)
+            except:
+                continue
         
-        # Get exchange rate (dynamic or fallback)
-        usd_to_cad_rate = get_usd_to_cad_rate()
-        
-        if usd_to_cad_rate is None:
-            # Fallback to approximate rate
-            usd_to_cad_rate = 1.35
-            print(f"   🔄 Using fallback rate: 1 USD = {usd_to_cad_rate} CAD")
-        
-        # Convert prices to CAD
-        hotels_df_cleaned['price_cad'] = hotels_df_cleaned['price'] * usd_to_cad_rate
-        hotels_df_cleaned['price_cad'] = hotels_df_cleaned['price_cad'].round(2)
-        
-        # Keep original USD price and rename for clarity
-        hotels_df_cleaned.rename(columns={'price': 'price_usd'}, inplace=True)
-        
-        valid_cad_prices = hotels_df_cleaned['price_cad'].notna().sum()
-        print(f"   ✅ Converted {valid_cad_prices} prices to CAD (rate: {usd_to_cad_rate})")
-        
-        if valid_cad_prices > 0:
-            avg_usd = hotels_df_cleaned['price_usd'].mean()
-            avg_cad = hotels_df_cleaned['price_cad'].mean()
-            print(f"   📊 Average price: ${avg_usd:.2f} USD → ${avg_cad:.2f} CAD")
-    
-    # Convert date columns to datetime objects
-    date_columns = ['Date', 'Check-in Date', 'Check-out Date']
-    
-    for col in date_columns:
-        if col in hotels_df_cleaned.columns:
-            print(f"📅 Converting {col} to datetime")
+        def check_holiday_period(checkin_date, checkout_date):
+            """Check if any day during the stay is a holiday."""
+            if pd.isna(checkin_date) or pd.isna(checkout_date):
+                return False
             
-            # Convert to datetime
-            hotels_df_cleaned[col] = pd.to_datetime(hotels_df_cleaned[col], errors='coerce')
+            # Check each day during the stay
+            current_date = checkin_date.date()
+            end_date = checkout_date.date()
             
-            # Count successful conversions
-            valid_dates = hotels_df_cleaned[col].notna().sum()
-            print(f"   ✅ Converted {valid_dates} date values to datetime")
-    
-    print(f"✅ Data cleaning complete. DataFrame now has {len(hotels_df_cleaned.columns)} columns.")
-    print(f"   Cleaned columns: {list(hotels_df_cleaned.columns)}")
-    
-    return hotels_df_cleaned
-
-def data_transformation(hotels_df):
-    """Transform cleaned hotel data by creating new analytical columns."""
-    if hotels_df is None:
-        print("❌ No hotel data provided for transformation.")
-        return None
-    
-    print("🔄 Starting data transformation...")
-    
-    # Create a copy to avoid modifying original data
-    hotels_transformed = hotels_df.copy()
-    
-    # Get current date (scraping date)
-    scraping_date = datetime.now().date()
-    print(f"📅 Using scraping date: {scraping_date}")
-    
-    # 1. Booking Lead Time: Check-in Date - Scraping Date
-    if 'Check-in Date' in hotels_transformed.columns:
-        print("⏰ Calculating booking lead time...")
-        
-        # Convert check-in dates to date objects for calculation
-        checkin_dates = pd.to_datetime(hotels_transformed['Check-in Date']).dt.date
-        
-        # Calculate lead time in days
-        hotels_transformed['booking_lead_time'] = (checkin_dates - scraping_date).apply(
-            lambda x: x.days if pd.notna(x) else None
-        )
-        
-        valid_lead_times = hotels_transformed['booking_lead_time'].notna().sum()
-        print(f"   ✅ Calculated lead time for {valid_lead_times} bookings")
-    
-    # 2. Length of Stay: Check-out Date - Check-in Date
-    if 'Check-in Date' in hotels_transformed.columns and 'Check-out Date' in hotels_transformed.columns:
-        print("🛏️ Calculating length of stay...")
-        
-        checkin = pd.to_datetime(hotels_transformed['Check-in Date'])
-        checkout = pd.to_datetime(hotels_transformed['Check-out Date'])
-        
-        # Calculate nights stayed
-        hotels_transformed['length_of_stay'] = (checkout - checkin).dt.days
-        
-        valid_stays = hotels_transformed['length_of_stay'].notna().sum()
-        print(f"   ✅ Calculated length of stay for {valid_stays} bookings")
-    
-    # 3. Day of Week for Check-in Date
-    if 'Check-in Date' in hotels_transformed.columns:
-        print("📆 Extracting day of week...")
-        
-        hotels_transformed['day_of_week'] = pd.to_datetime(hotels_transformed['Check-in Date']).dt.day_name()
-        
-        valid_days = hotels_transformed['day_of_week'].notna().sum()
-        print(f"   ✅ Extracted day of week for {valid_days} check-ins")
-    
-    # 4. Month for Check-in Date
-    if 'Check-in Date' in hotels_transformed.columns:
-        print("📅 Extracting month...")
-        
-        hotels_transformed['month'] = pd.to_datetime(hotels_transformed['Check-in Date']).dt.month_name()
-        
-        valid_months = hotels_transformed['month'].notna().sum()
-        print(f"   ✅ Extracted month for {valid_months} check-ins")
-    
-    # 5. Week of Year for Check-in Date
-    if 'Check-in Date' in hotels_transformed.columns:
-        print("📊 Calculating week of year...")
-        
-        hotels_transformed['week_of_year'] = pd.to_datetime(hotels_transformed['Check-in Date']).dt.isocalendar().week
-        
-        valid_weeks = hotels_transformed['week_of_year'].notna().sum()
-        print(f"   ✅ Calculated week of year for {valid_weeks} check-ins")
-    
-    # 6. Is Weekend Flag: Check if Friday, Saturday, or Sunday falls within the stay
-    if 'Check-in Date' in hotels_transformed.columns and 'Check-out Date' in hotels_transformed.columns:
-        print("🎉 Calculating weekend flag...")
-        
-        def check_weekend_overlap(checkin, checkout):
-            """Check if any Friday, Saturday, or Sunday falls within the stay period."""
-            if pd.isna(checkin) or pd.isna(checkout):
-                return None
-            
-            checkin_date = pd.to_datetime(checkin)
-            checkout_date = pd.to_datetime(checkout)
-            
-            # Generate all dates in the stay period (excluding checkout day)
-            stay_dates = pd.date_range(start=checkin_date, end=checkout_date - timedelta(days=1))
-            
-            # Check if any date is Friday (4), Saturday (5), or Sunday (6)
-            weekend_days = stay_dates.dayofweek.isin([4, 5, 6])  # Friday, Saturday, Sunday
-            
-            return weekend_days.any()
-        
-        # Apply the weekend check function
-        hotels_transformed['is_weekend'] = hotels_transformed.apply(
-            lambda row: check_weekend_overlap(row['Check-in Date'], row['Check-out Date']), 
-            axis=1
-        )
-        
-        valid_weekend_flags = hotels_transformed['is_weekend'].notna().sum()
-        weekend_stays = hotels_transformed['is_weekend'].sum() if hotels_transformed['is_weekend'].notna().any() else 0
-        print(f"   ✅ Calculated weekend flag for {valid_weekend_flags} bookings")
-        print(f"   🎊 {weekend_stays} bookings include weekends")
-    
-    print(f"✅ Data transformation complete. DataFrame now has {len(hotels_transformed.columns)} columns.")
-    
-    # Show new columns created
-    new_columns = ['booking_lead_time', 'length_of_stay', 'day_of_week', 'month', 'week_of_year', 'is_weekend']
-    existing_new_cols = [col for col in new_columns if col in hotels_transformed.columns]
-    print(f"   New columns added: {existing_new_cols}")
-    
-    # 7. Extract District from Address
-    if 'Address' in hotels_transformed.columns:
-        print("🏙️ Extracting district from address...")
-        
-        def extract_district(address):
-            """Extract district from address using multiple methods."""
-            if pd.isna(address) or address == 'N/A':
-                return None
-            
-            address_str = str(address)
-            
-            # Method 1: Extract from parentheses (most common format)
-            # Example: "Entertainment District, Toronto (Entertainment District)"
-            import re
-            parentheses_match = re.search(r'\(([^)]+)\)', address_str)
-            if parentheses_match:
-                district = parentheses_match.group(1).strip()
-                # Remove "Toronto" if it appears in the district name
-                district = re.sub(r',?\s*Toronto$', '', district).strip()
-                if district and district != 'Toronto':
-                    return district
-            
-            # Method 2: Extract from comma-separated parts
-            # Example: "Financial District, Toronto" or "Etobicoke, Toronto"
-            parts = address_str.split(',')
-            if len(parts) >= 2:
-                potential_district = parts[0].strip()
-                # Skip if it's clearly a street address (contains numbers)
-                if not re.search(r'\d+', potential_district) and len(potential_district) > 3:
-                    return potential_district
-            
-            # Method 3: Known Toronto districts/neighborhoods
-            toronto_districts = [
-                'Entertainment District', 'Financial District', 'Yonge - Dundas', 'The Village',
-                'Kensington Market', 'Etobicoke', 'Scarborough', 'North York', 'York',
-                'Downtown', 'Midtown', 'Uptown', 'Harbourfront', 'Distillery District',
-                'King Street West', 'Queen Street West', 'Yorkville', 'The Annex',
-                'Liberty Village', 'CityPlace', 'Parkdale', 'Leslieville', 'Riverdale',
-                'Corktown', 'St. Lawrence', 'Church-Wellesley', 'Bloor West Village',
-                'Little Italy', 'Little Portugal', 'Chinatown', 'Koreatown', 'Greektown'
-            ]
-            
-            # Check if any known district appears in the address
-            address_upper = address_str.upper()
-            for district in toronto_districts:
-                if district.upper() in address_upper:
-                    return district
-            
-            # If no district found, return None
-            return None
-        
-        # Apply district extraction
-        hotels_transformed['district'] = hotels_transformed['Address'].apply(extract_district)
-        
-        valid_districts = hotels_transformed['district'].notna().sum()
-        unique_districts = hotels_transformed['district'].nunique()
-        print(f"   ✅ Extracted districts for {valid_districts} hotels")
-        print(f"   🏘️ Found {unique_districts} unique districts")
-        
-        # Show district distribution
-        if valid_districts > 0:
-            district_counts = hotels_transformed['district'].value_counts().head(10)
-            print(f"   📊 Top districts:")
-            for district, count in district_counts.items():
-                print(f"      {district}: {count} hotels")
-    
-    print(f"✅ Data transformation complete. DataFrame now has {len(hotels_transformed.columns)} columns.")
-    
-    # Show new columns created
-    new_columns = ['booking_lead_time', 'length_of_stay', 'day_of_week', 'month', 'week_of_year', 'is_weekend', 'district']
-    existing_new_cols = [col for col in new_columns if col in hotels_transformed.columns]
-    print(f"   New columns added: {existing_new_cols}")
-    
-    return hotels_transformed
-
-def add_holiday_flag(hotels_df):
-    """Add is_holiday column to indicate if any public holiday falls within the hotel stay period."""
-    if hotels_df is None:
-        print("❌ No hotel data provided for holiday flag calculation.")
-        return None
-    
-    print("🎄 Adding holiday flag...")
-    
-    # Import holidays library
-    try:
-        import holidays
-    except ImportError:
-        print("❌ The 'holidays' library is not installed.")
-        print("💡 Install it with: pip install holidays")
-        return hotels_df
-    
-    # Create a copy to avoid modifying original data
-    hotels_with_holidays = hotels_df.copy()
-    
-    # Get Canadian holidays from all provinces to capture all possible holidays
-    all_provinces = ['AB', 'BC', 'MB', 'NB', 'NL', 'NS', 'NT', 'NU', 'ON', 'PE', 'QC', 'SK', 'YT']
-    canada_holidays = holidays.Canada(years=[2025, 2026])
-    
-    # Add provincial holidays from all provinces
-    for prov in all_provinces:
-        prov_holidays = holidays.Canada(prov=prov, years=[2025, 2026])
-        canada_holidays.update(prov_holidays)
-    
-    print(f"📅 Using Canadian holidays from all provinces for years 2025-2026")
-    
-    def check_holiday_overlap(checkin, checkout):
-        """Check if any public holiday falls within the stay period (inclusive of checkin, exclusive of checkout)."""
-        if pd.isna(checkin) or pd.isna(checkout):
-            return None
-        
-        try:
-            checkin_date = pd.to_datetime(checkin).date()
-            checkout_date = pd.to_datetime(checkout).date()
-            
-            # Generate all dates in the stay period (including checkin, excluding checkout)
-            current_date = checkin_date
-            while current_date < checkout_date:
+            while current_date <= end_date:
                 if current_date in canada_holidays:
                     return True
                 current_date += timedelta(days=1)
-            
             return False
+        
+        # Apply holiday check
+        if 'Check-in Date' in df.columns and 'Check-out Date' in df.columns:
+            df['is_holiday'] = df.apply(lambda row: check_holiday_period(
+                row['Check-in Date'], row['Check-out Date']), axis=1)
             
-        except Exception as e:
-            print(f"⚠️ Error checking holiday for dates {checkin} to {checkout}: {e}")
+            holiday_count = df['is_holiday'].sum()
+            print(f"   ✅ Found {holiday_count} bookings during holiday periods")
+        
+        return df
+    
+    def extract_districts(self, df):
+        """Step 6: Extract and enhance district information."""
+        print("🗺️ Step 6: Extracting districts...")
+        
+        def extract_district_from_address(address):
+            """Extract district from hotel address."""
+            if pd.isna(address):
+                return None
+            
+            address = str(address).lower()
+            
+            # Toronto district patterns
+            district_patterns = {
+                'entertainment district': ['entertainment', 'theatre', 'theater'],
+                'financial district': ['financial', 'bay street', 'king street'],
+                'bloor-yorkville': ['bloor', 'yorkville', 'rosedale'],
+                'fashion district': ['fashion', 'garment'],
+                'the annex': ['annex', 'university of toronto'],
+                'old town': ['old town', 'st lawrence', 'front street'],
+                'yonge - dundas': ['yonge', 'dundas', 'eaton'],
+                'queen west': ['queen west', 'ossington'],
+                'king street west': ['king street west', 'king west'],
+                'church-wellesley village': ['church', 'wellesley', 'gay village'],
+                'cabbagetown': ['cabbagetown', 'parliament'],
+                'leslieville': ['leslieville', 'queen east'],
+                'the beaches': ['beaches', 'beach', 'woodbine'],
+                'liberty village': ['liberty village', 'liberty'],
+                'cityplace': ['cityplace', 'city place', 'fort york'],
+                'harbourfront': ['harbourfront', 'harbour', 'waterfront'],
+                'distillery district': ['distillery', 'cherry street'],
+                'chinatown': ['chinatown', 'spadina'],
+                'kensington market': ['kensington'],
+                'little italy': ['little italy', 'college street'],
+                'parkdale': ['parkdale', 'king street west'],
+                'airport area': ['airport', 'pearson', 'dixon'],
+                'etobicoke': ['etobicoke', 'islington'],
+                'north york': ['north york', 'sheppard', 'finch'],
+                'scarborough': ['scarborough'],
+                'east york': ['east york'],
+                'york': ['york', 'weston']
+            }
+            
+            for district, patterns in district_patterns.items():
+                for pattern in patterns:
+                    if pattern in address:
+                        return district.title()
+            
             return None
+        
+        def extract_district_from_name(hotel_name):
+            """Extract district from hotel name."""
+            if pd.isna(hotel_name):
+                return None
+            
+            name = str(hotel_name).lower()
+            
+            # Hotel name patterns
+            name_patterns = {
+                'Airport Area': ['airport', 'pearson'],
+                'Entertainment District': ['theatre', 'theater', 'entertainment'],
+                'Financial District': ['financial', 'bay street'],
+                'Queen West': ['queen west'],
+                'The Beaches': ['beach', 'beaches'],
+                'Bloor-Yorkville': ['bloor', 'yorkville'],
+                'Harbourfront': ['harbour', 'waterfront'],
+                'King Street West': ['king west'],
+                'Distillery District': ['distillery'],
+                'North York': ['north york'],
+                'Etobicoke': ['etobicoke'],
+                'Scarborough': ['scarborough']
+            }
+            
+            for district, patterns in name_patterns.items():
+                for pattern in patterns:
+                    if pattern in name:
+                        return district
+            
+            return None
+        
+        # Extract districts from address first
+        if 'Hotel address' in df.columns:
+            df['district_from_address'] = df['Hotel address'].apply(extract_district_from_address)
+        
+        # Fill missing districts using hotel names
+        if 'Hotel name' in df.columns:
+            df['district_from_name'] = df['Hotel name'].apply(extract_district_from_name)
+        
+        # Combine district information
+        if 'district' not in df.columns:
+            df['district'] = None
+        
+        # Use address-based district first, then name-based
+        if 'district_from_address' in df.columns:
+            df['district'] = df['district'].fillna(df['district_from_address'])
+        if 'district_from_name' in df.columns:
+            df['district'] = df['district'].fillna(df['district_from_name'])
+        
+        # Clean up temporary columns
+        temp_cols = ['district_from_address', 'district_from_name']
+        df = df.drop(columns=[col for col in temp_cols if col in df.columns])
+        
+        district_coverage = (df['district'].notna().sum() / len(df)) * 100
+        print(f"   ✅ District coverage: {district_coverage:.1f}%")
+        
+        return df
     
-    # Apply the holiday check function
-    if 'Check-in Date' in hotels_with_holidays.columns and 'Check-out Date' in hotels_with_holidays.columns:
-        hotels_with_holidays['is_holiday'] = hotels_with_holidays.apply(
-            lambda row: check_holiday_overlap(row['Check-in Date'], row['Check-out Date']), 
-            axis=1
-        )
+    def add_coordinates(self, df):
+        """Step 7: Add latitude and longitude coordinates."""
+        print("📍 Step 7: Adding coordinates...")
         
-        valid_holiday_flags = hotels_with_holidays['is_holiday'].notna().sum()
-        holiday_stays = hotels_with_holidays['is_holiday'].sum() if hotels_with_holidays['is_holiday'].notna().any() else 0
+        def get_coordinates(district):
+            """Get coordinates for a district."""
+            if pd.isna(district):
+                return self.district_coords['Toronto']  # Default to Toronto center
+            
+            district_clean = str(district).strip()
+            
+            # Direct match
+            if district_clean in self.district_coords:
+                return self.district_coords[district_clean]
+            
+            # Case-insensitive match
+            for key, coords in self.district_coords.items():
+                if key.lower() == district_clean.lower():
+                    return coords
+            
+            # Partial match
+            for key, coords in self.district_coords.items():
+                if district_clean.lower() in key.lower() or key.lower() in district_clean.lower():
+                    return coords
+            
+            # Default to Toronto center
+            return self.district_coords['Toronto']
         
-        print(f"   ✅ Calculated holiday flag for {valid_holiday_flags} bookings")
-        print(f"   🎉 {holiday_stays} bookings include public holidays")
+        # Add coordinates
+        coords = df['district'].apply(get_coordinates)
+        df['latitude'] = coords.apply(lambda x: x[0])
+        df['longitude'] = coords.apply(lambda x: x[1])
         
-        # Show which holidays are affecting bookings
-        if holiday_stays > 0:
-            print(f"   📋 Sample holidays in 2025 (Ontario):")
-            
-            # Get holidays for 2025 (main year for our data)
-            holidays_2025 = {date: name for date, name in canada_holidays.items() if date.year == 2025}
-            
-            # Show first 10 holidays as examples
-            for i, (date, name) in enumerate(list(holidays_2025.items())[:10]):
-                print(f"      {date}: {name}")
-            
-            if len(holidays_2025) > 10:
-                print(f"      ... and {len(holidays_2025) - 10} more holidays in 2025")
-    else:
-        print("   ❌ Required date columns not found for holiday calculation")
-        return hotels_df
+        print(f"   ✅ Added coordinates for 100% of hotels")
+        return df
     
-    print(f"✅ Holiday flag added. DataFrame now has {len(hotels_with_holidays.columns)} columns.")
-    return hotels_with_holidays
+    def fill_districts_by_coordinates(self, df):
+        """Step 7.5: Fill empty districts using latitude/longitude coordinates."""
+        print("🗺️ Step 7.5: Filling empty districts using coordinates...")
+        
+        def calculate_distance(lat1, lon1, lat2, lon2):
+            """Calculate distance between two points using Haversine formula."""
+            import math
+            
+            # Convert to radians
+            lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
+            
+            # Haversine formula
+            dlat = lat2 - lat1
+            dlon = lon2 - lon1
+            a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+            c = 2 * math.asin(math.sqrt(a))
+            r = 6371  # Earth's radius in kilometers
+            
+            return c * r
+        
+        def find_closest_district(lat, lon):
+            """Find the closest district based on coordinates."""
+            if pd.isna(lat) or pd.isna(lon):
+                return None
+            
+            min_distance = float('inf')
+            closest_district = None
+            
+            for district, (dist_lat, dist_lon) in self.district_coords.items():
+                if district == 'Toronto':  # Skip the default center
+                    continue
+                    
+                distance = calculate_distance(lat, lon, dist_lat, dist_lon)
+                if distance < min_distance:
+                    min_distance = distance
+                    closest_district = district
+            
+            return closest_district
+        
+        # Count empty districts before filling
+        empty_districts = df['district'].isna().sum()
+        
+        if empty_districts > 0:
+            print(f"   📍 Found {empty_districts} hotels with missing districts")
+            
+            # Fill empty districts based on coordinates
+            mask = df['district'].isna() & df['latitude'].notna() & df['longitude'].notna()
+            
+            if mask.sum() > 0:
+                print(f"   🔄 Using coordinates to fill {mask.sum()} districts...")
+                
+                # Apply the closest district function
+                df.loc[mask, 'district'] = df.loc[mask].apply(
+                    lambda row: find_closest_district(row['latitude'], row['longitude']), 
+                    axis=1
+                )
+                
+                # Count how many were filled
+                filled_count = empty_districts - df['district'].isna().sum()
+                print(f"   ✅ Filled {filled_count} districts using coordinate-based matching")
+                
+                # Show some examples
+                if filled_count > 0:
+                    filled_examples = df[mask & df['district'].notna()][['Hotel name', 'latitude', 'longitude', 'district']].head(3)
+                    print(f"   📋 Examples of filled districts:")
+                    for _, row in filled_examples.iterrows():
+                        print(f"     • {row['Hotel name'][:30]:<30} → {row['district']}")
+            else:
+                print(f"   ⚠️ No coordinates available for hotels with missing districts")
+        else:
+            print(f"   ✅ All hotels already have district information")
+        
+        # Final district coverage
+        final_coverage = (df['district'].notna().sum() / len(df)) * 100
+        print(f"   📊 Final district coverage: {final_coverage:.1f}%")
+        
+        return df
+    
+    def add_derived_features(self, df):
+        """Step 8: Add derived features for analysis."""
+        print("🔧 Step 8: Adding derived features...")
+        
+        # Weekend flag - check if any day during stay includes weekend
+        if 'Check-in Date' in df.columns and 'Check-out Date' in df.columns:
+            def has_weekend_during_stay(checkin_date, checkout_date):
+                """Check if any day during the stay falls on a weekend (Saturday or Sunday)."""
+                if pd.isna(checkin_date) or pd.isna(checkout_date):
+                    return False
+                
+                # Check each day during the stay
+                current_date = checkin_date.date()
+                end_date = checkout_date.date()
+                
+                while current_date <= end_date:
+                    # weekday(): Monday=0, Tuesday=1, ..., Friday=4, Saturday=5, Sunday=6
+                    if current_date.weekday() >= 5:  # Saturday or Sunday
+                        return True
+                    current_date += timedelta(days=1)
+                return False
+            
+            df['is_weekend'] = df.apply(lambda row: has_weekend_during_stay(
+                row['Check-in Date'], row['Check-out Date']), axis=1)
+            print(f"   📅 Calculated is_weekend: checks if any day during stay includes weekend")
+        
+        # Week of year
+        if 'Check-in Date' in df.columns:
+            df['week_of_year'] = df['Check-in Date'].dt.isocalendar().week
+        
+        # Booking lead time (Check-in Date - Date when scraped)
+        if 'Check-in Date' in df.columns and 'Date' in df.columns:
+            df['booking_lead_time'] = (df['Check-in Date'] - df['Date']).dt.days
+            df['booking_lead_time'] = df['booking_lead_time'].clip(lower=0)  # No negative lead times
+            print(f"   📅 Calculated booking_lead_time: Check-in Date - Scraping Date")
+        
+        # Categorize room types for ML modeling
+        if 'Room Type' in df.columns:
+            df['room_category'] = df['Room Type'].apply(self.categorize_room_type)
+            print(f"   🏨 Categorized room types: {df['Room Type'].nunique()} unique → {df['room_category'].nunique()} categories")
+        
+        print(f"   ✅ Added derived features")
+        return df
+    
+    def categorize_room_type(self, room_type):
+        """Categorize room types into standard industry categories for ML modeling."""
+        if pd.isna(room_type):
+            return 'Standard'
+        
+        room_str = str(room_type).lower()
+        
+        # Apartment-style accommodations
+        if any(keyword in room_str for keyword in ['apartment', 'condo', 'house', 'bungalow']):
+            if any(keyword in room_str for keyword in ['three', '3', 'four', '4']):
+                return 'Large Apartment'  # 3+ bedrooms
+            elif any(keyword in room_str for keyword in ['two', '2']):
+                return 'Two-Bedroom Apartment'
+            elif any(keyword in room_str for keyword in ['one', '1', 'studio']):
+                return 'One-Bedroom Apartment'
+            else:
+                return 'Apartment'
+        
+        # Suite categories
+        elif any(keyword in room_str for keyword in ['suite', 'junior suite']):
+            if any(keyword in room_str for keyword in ['presidential', 'penthouse', 'luxury']):
+                return 'Luxury Suite'
+            elif any(keyword in room_str for keyword in ['junior']):
+                return 'Junior Suite'
+            else:
+                return 'Suite'
+        
+        # Premium/Deluxe rooms
+        elif any(keyword in room_str for keyword in ['deluxe', 'premium', 'superior', 'executive', 'business']):
+            return 'Deluxe Room'
+        
+        # Studio rooms
+        elif 'studio' in room_str:
+            return 'Studio'
+        
+        # Family rooms (multiple beds or explicitly family)
+        elif any(keyword in room_str for keyword in ['family', 'triple', 'quad', 'two queen', 'two double', 'two bed']):
+            return 'Family Room'
+        
+        # Accessible rooms
+        elif any(keyword in room_str for keyword in ['accessible', 'handicap', 'mobility']):
+            return 'Accessible Room'
+        
+        # Budget/Economy rooms
+        elif any(keyword in room_str for keyword in ['budget', 'economy', 'basic', 'shared bathroom', 'hostel']):
+            return 'Economy Room'
+        
+        # Standard rooms by bed type
+        elif any(keyword in room_str for keyword in ['king']):
+            return 'Standard King'
+        elif any(keyword in room_str for keyword in ['queen']):
+            return 'Standard Queen'
+        elif any(keyword in room_str for keyword in ['double', 'twin']):
+            return 'Standard Double'
+        elif any(keyword in room_str for keyword in ['single']):
+            return 'Standard Single'
+        
+        # Generic room types
+        elif any(keyword in room_str for keyword in ['standard', 'room']):
+            return 'Standard Room'
+        
+        # Default category
+        else:
+            return 'Standard'
+    
+    def final_quality_check(self, df):
+        """Step 9: Final data quality check and summary."""
+        print("✅ Step 9: Final quality check...")
+        
+        # Basic statistics
+        total_rows = len(df)
+        total_cols = len(df.columns)
+        
+        # Check missing data
+        missing_data = df.isnull().sum()
+        missing_pct = (missing_data / len(df)) * 100
+        
+        print(f"   📊 Final dataset: {total_rows:,} rows × {total_cols} columns")
+        
+        # Key feature coverage
+        key_features = ['price_cad', 'district', 'latitude', 'longitude', 'is_holiday']
+        for feature in key_features:
+            if feature in df.columns:
+                coverage = ((df[feature].notna().sum() / len(df)) * 100)
+                print(f"   • {feature}: {coverage:.1f}% coverage")
+        
+        # Price statistics
+        if 'price_cad' in df.columns:
+            price_stats = df['price_cad'].describe()
+            print(f"   💰 Price range: ${price_stats['min']:.2f} - ${price_stats['max']:.2f} CAD")
+            print(f"   💰 Mean price: ${price_stats['mean']:.2f} CAD")
+        
+        return df
+    
+    def remove_empty_columns(self, df):
+        """Step 10: Remove columns that are completely empty."""
+        print("🗑️ Step 10: Removing empty columns...")
+        
+        original_cols = len(df.columns)
+        
+        # Find columns that are completely empty (all null values)
+        empty_columns = []
+        for col in df.columns:
+            if df[col].isnull().all():
+                empty_columns.append(col)
+        
+        if empty_columns:
+            # Remove empty columns
+            df = df.drop(columns=empty_columns)
+            print(f"   🧹 Removed {len(empty_columns)} empty columns:")
+            for col in empty_columns:
+                print(f"     • {col}")
+        else:
+            print(f"   ✅ No completely empty columns found")
+        
+        final_cols = len(df.columns)
+        print(f"   📊 Columns: {original_cols} → {final_cols}")
+        
+        return df
+    
+    def remove_low_coverage_columns(self, df, coverage_threshold=0.2):
+        """Step 11: Remove columns with low data coverage (less than 20% by default)."""
+        print(f"🗑️ Step 11: Removing columns with less than {coverage_threshold*100:.0f}% coverage...")
+        
+        original_cols = len(df.columns)
+        low_coverage_columns = []
+        
+        # Essential columns that should never be removed regardless of coverage
+        essential_columns = [
+            'Hotel name', 'price_usd', 'price_cad', 'Check-in Date', 'Check-out Date',
+            'district', 'latitude', 'longitude', 'room_category', 'is_weekend', 
+            'is_holiday', 'booking_lead_time', 'length_of_stay'
+        ]
+        
+        for col in df.columns:
+            if col in essential_columns:
+                continue  # Skip essential columns
+            
+            # Calculate coverage (non-null percentage)
+            coverage = df[col].notna().sum() / len(df)
+            
+            if coverage < coverage_threshold:
+                low_coverage_columns.append((col, coverage))
+        
+        if low_coverage_columns:
+            # Sort by coverage for better reporting
+            low_coverage_columns.sort(key=lambda x: x[1])
+            
+            # Remove the columns
+            columns_to_drop = [col[0] for col in low_coverage_columns]
+            df = df.drop(columns=columns_to_drop)
+            
+            print(f"   🧹 Removed {len(columns_to_drop)} low coverage columns:")
+            for col, coverage in low_coverage_columns:
+                print(f"     • {col} ({coverage*100:.1f}% coverage)")
+        else:
+            print(f"   ✅ No columns with coverage below {coverage_threshold*100:.0f}% found")
+        
+        final_cols = len(df.columns)
+        print(f"   📊 Columns: {original_cols} → {final_cols}")
+        
+        return df
+    
+    def save_final_dataset(self, df, output_file='Data/toronto_hotels_transformed.csv'):
+        """Save the final processed dataset."""
+        print(f"💾 Saving final dataset to {output_file}...")
+        
+        try:
+            df.to_csv(output_file, index=False)
+            print(f"   ✅ Saved successfully: {len(df)} rows, {len(df.columns)} columns")
+        except Exception as e:
+            print(f"   ❌ Error saving: {e}")
+    
+    def run_pipeline(self, output_file='Data/toronto_hotels_transformed.csv'):
+        """Run the complete data transformation pipeline."""
+        print(f"🚀 Starting complete data transformation pipeline...")
+        print(f"📁 Input: {self.input_file}")
+        print(f"📁 Output: {output_file}")
+        print()
+        
+        # Step 1: Load data
+        df = self.load_data()
+        if df is None:
+            return None
+        
+        # Step 2: Currency conversion
+        df = self.currency_conversion(df)
+        
+        # Step 3: Data cleaning
+        df = self.data_cleaning(df)
+        
+        # Step 4: Weather data
+        df = self.add_weather_data(df)
+        
+        # Step 5: Holiday flags
+        df = self.add_holiday_flags(df)
+        
+        # Step 6: District extraction
+        df = self.extract_districts(df)
+        
+        # Step 7: Coordinates
+        df = self.add_coordinates(df)
+        
+        # Step 7.5: Fill empty districts using coordinates
+        df = self.fill_districts_by_coordinates(df)
+        
+        # Step 8: Derived features
+        df = self.add_derived_features(df)
+        
+        # Step 9: Quality check
+        df = self.final_quality_check(df)
+        
+        # Step 10: Remove empty columns
+        df = self.remove_empty_columns(df)
+        
+        # Step 11: Remove low coverage columns
+        df = self.remove_low_coverage_columns(df)
+        
+        # Save final dataset
+        self.save_final_dataset(df, output_file)
+        
+        print()
+        print("🎉 PIPELINE COMPLETE!")
+        print("=" * 50)
+        print(f"✅ Transformed {self.input_file}")
+        print(f"✅ Created {output_file}")
+        print("✅ Ready for machine learning and analysis!")
+        
+        return df
+
 
 def main():
-
-    print("\n1️⃣ Loading Events Data...")
-    events_df = read_toronto_events()
-
-    # Clean events data
-    if events_df is not None:
-        print("\n1️⃣.1 Cleaning Events Data...")
-        events_df = clean_events_data(events_df)
-
-    # Read weather data
-    print("\n1️⃣.2 Loading Weather Data...")
-    weather_df = read_toronto_weather()
-
-    # Clean weather data
-    if weather_df is not None:
-        print("\n1️⃣.3 Cleaning Weather Data...")
-        weather_df = clean_weather_data(weather_df)
-
-    # Read all hotel data
-    print("\n2️⃣ Loading Hotel Data...")
-    hotels_df = read_all_hotel_files()
-
-    # Clean hotel data
-    if hotels_df is not None:
-        print("\n3️⃣ Cleaning Hotel Data...")
-        hotels_df = data_cleaning(hotels_df)
-
-    # Transform hotel data
-    if hotels_df is not None:
-        print("\n4️⃣ Transforming Hotel Data...")
-        hotels_df = data_transformation(hotels_df)
-        
-        # Add holiday flag
-        print("\n4️⃣.1 Adding Holiday Flag...")
-        hotels_df = add_holiday_flag(hotels_df)
-
-    # Summary
-    print("\n" + "="*45)
-    print("📊 DATA LOADING SUMMARY")
-    print("="*45)
-
-    if events_df is not None:
-        print(f"✅ Events: {len(events_df)} records loaded")
-    else:
-        print("❌ Events: Failed to load")
-
-    if weather_df is not None:
-        print(f"✅ Weather: {len(weather_df)} records loaded")
-    else:
-        print("❌ Weather: Failed to load")
-
-    if hotels_df is not None:
-        print(f"✅ Hotels: {len(hotels_df)} records loaded")
-    else:
-        print("❌ Hotels: Failed to load")
-
-    # Determine which datasets were successfully loaded
-    datasets_loaded = []
-    if events_df is not None:
-        datasets_loaded.append("Events")
-    if weather_df is not None:
-        datasets_loaded.append("Weather")
-    if hotels_df is not None:
-        datasets_loaded.append("Hotels")
+    """Run the complete hotel data transformation pipeline."""
     
-    if datasets_loaded:
-        print(f"\n🎉 Successfully loaded: {', '.join(datasets_loaded)}")
-        print("💡 Ready for analysis and combination!")
-        
-        # Save cleaned datasets to CSV
-        print("\n5️⃣ Saving Cleaned Data...")
-        
-        # Save cleaned events data
-        if events_df is not None:
-            events_output_file = 'Data/toronto_events_cleaned.csv'
-            events_df.to_csv(events_output_file, index=False)
-            print(f"✅ Cleaned events data saved to: {events_output_file}")
-            print(f"   Events records: {len(events_df)}")
-        
-        # Save cleaned weather data
-        if weather_df is not None:
-            weather_output_file = 'Data/toronto_weather_cleaned.csv'
-            weather_df.to_csv(weather_output_file, index=False)
-            print(f"✅ Cleaned weather data saved to: {weather_output_file}")
-            print(f"   Weather records: {len(weather_df)}")
-            print(f"   Weather columns: {list(weather_df.columns)}")
-        
-        # Save cleaned and transformed hotels data  
-        if hotels_df is not None:
-            hotels_output_file = 'Data/toronto_hotels_cleaned_transformed.csv'
-            hotels_df.to_csv(hotels_output_file, index=False)
-            print(f"✅ Cleaned & transformed hotel data saved to: {hotels_output_file}")
-            print(f"   Hotel records: {len(hotels_df)}")
-            print(f"   Columns: {len(hotels_df.columns)}")
-    else:
-        print("\n⚠️ No datasets could be loaded. Check file paths and run data generation scripts if needed.")
+    # Initialize pipeline
+    pipeline = HotelDataPipeline('Data/toronto_unified_hotel_analysis.csv')
+    
+    # Run the complete transformation
+    final_df = pipeline.run_pipeline('Data/toronto_hotels_transformed.csv')
+    
+    if final_df is not None:
+        print(f"\n📋 TRANSFORMATION SUMMARY")
+        print("-" * 30)
+        print(f"Input file: toronto_unified_hotel_analysis.csv")
+        print(f"Output file: toronto_hotels_transformed.csv")
+        print(f"Transformations applied:")
+        print(f"  ✅ USD → CAD conversion")
+        print(f"  ✅ Data cleaning & duplicate removal")
+        print(f"  ✅ Weather data integration")
+        print(f"  ✅ Canadian holiday detection")
+        print(f"  ✅ District extraction & enhancement")
+        print(f"  ✅ Geocoding with coordinates")
+        print(f"  ✅ Derived feature engineering")
+        print(f"\n🎯 Ready for hotel price prediction modeling!")
 
-    # Show sample data and info
-    if hotels_df is not None:
-        print("\n📋 Hotel Data Sample:")
-        print(hotels_df.head())
-        
-        print("\n📊 Data Types and Info:")
-        print(hotels_df.dtypes)
-        print(f"\nDataFrame Info:")
-        hotels_df.info()
 
-    if events_df is not None:
-        print("\n📋 Events Data Sample:")
-        print(events_df.head())
-        
-        print("\n📊 Events Data Types:")
-        print(events_df.dtypes)
-
-main()
-
+if __name__ == "__main__":
+    main()

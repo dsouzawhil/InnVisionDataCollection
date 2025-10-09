@@ -34,12 +34,20 @@ def load_cleaned_datasets():
         datasets['hotels'] = pd.read_csv(geocoded_hotel_file)
         print(f"✅ Loaded geocoded hotel data: {len(datasets['hotels'])} records")
         # Check if coordinates are available
-        coords_available = datasets['hotels']['hotel_latitude'].notna().sum()
-        print(f"   📍 Hotels with coordinates: {coords_available}/{len(datasets['hotels'])}")
+        if 'hotel_latitude' in datasets['hotels'].columns:
+            coords_available = datasets['hotels']['hotel_latitude'].notna().sum()
+            print(f"   📍 Hotels with coordinates: {coords_available}/{len(datasets['hotels'])}")
+        else:
+            print(f"   ⚠️ No coordinate columns found in geocoded file")
     elif os.path.exists(regular_hotel_file):
         datasets['hotels'] = pd.read_csv(regular_hotel_file)
         print(f"✅ Loaded hotel data: {len(datasets['hotels'])} records")
-        print(f"   ⚠️ No coordinates available - spatial analysis will be limited")
+        # Check if coordinates are available in regular file
+        if 'hotel_latitude' in datasets['hotels'].columns:
+            coords_available = datasets['hotels']['hotel_latitude'].notna().sum()
+            print(f"   📍 Hotels with coordinates: {coords_available}/{len(datasets['hotels'])}")
+        else:
+            print(f"   ⚠️ No coordinates available - spatial analysis will be limited")
     else:
         print(f"❌ Hotel data not found")
     

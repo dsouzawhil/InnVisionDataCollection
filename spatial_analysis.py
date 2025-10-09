@@ -8,9 +8,6 @@ PERFORMANCE NOTE: This module has been optimized to eliminate slow iterrows() op
 and uses vectorized operations for production ML pipelines.
 """
 
-import pandas as pd
-import numpy as np
-from geopy.distance import geodesic
 import warnings
 warnings.filterwarnings('ignore')
 
