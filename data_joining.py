@@ -28,7 +28,7 @@ def load_cleaned_datasets():
     
     # Load hotel data - prefer geocoded version if available
     geocoded_hotel_file = os.path.join(data_dir, 'toronto_hotels_with_coordinates.csv')
-    regular_hotel_file = os.path.join(data_dir, 'toronto_hotels_cleaned_transformed.csv')
+    regular_hotel_file = os.path.join(data_dir, 'toronto_hotels_combined.csv')
     
     if os.path.exists(geocoded_hotel_file):
         datasets['hotels'] = pd.read_csv(geocoded_hotel_file)
@@ -60,7 +60,7 @@ def load_cleaned_datasets():
         print(f"❌ Events data not found: {events_file}")
     
     # Load weather data
-    weather_file = os.path.join(data_dir, 'toronto_weather_cleaned.csv')
+    weather_file = os.path.join(data_dir, 'toronto_weather_2025.csv')
     if os.path.exists(weather_file):
         datasets['weather'] = pd.read_csv(weather_file)
         print(f"✅ Loaded weather data: {len(datasets['weather'])} records")

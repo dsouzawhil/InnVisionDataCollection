@@ -77,7 +77,7 @@ def combine_hotel_files():
         print(f"   Removed duplicates: {before_dedup - after_dedup:,}")
     
     # Save combined file
-    output_file = 'Data/toronto_hotels_cleaned_transformed.csv'
+    output_file = 'Data/toronto_hotels_combined.csv'
     combined_df.to_csv(output_file, index=False)
     
     print(f"\n✅ Saved combined hotel data: {output_file}")
@@ -95,9 +95,9 @@ def run_data_joining():
     
     # Check if required files exist
     required_files = [
-        'Data/toronto_hotels_cleaned_transformed.csv',
+        'Data/toronto_hotels_combined.csv',
         'Data/toronto_events_cleaned.csv',
-        'Data/toronto_weather_cleaned.csv'
+        'Data/toronto_weather_2025.csv'
     ]
     
     missing_files = []
@@ -180,7 +180,7 @@ def check_pipeline_prerequisites():
     
     # Check for weather data
     weather_files = [
-        'Data/toronto_weather_cleaned.csv',
+        'Data/toronto_weather_2025.csv',
         'Data/toronto_weather_2025.csv'
     ]
     weather_found = [f for f in weather_files if os.path.exists(f)]
@@ -232,7 +232,7 @@ def main():
     print("\n🎉 PIPELINE COMPLETED SUCCESSFULLY!")
     print("=" * 50)
     print("📁 Output files created:")
-    print("   ✅ Data/toronto_hotels_cleaned_transformed.csv (combined hotel data)")
+    print("   ✅ Data/toronto_hotels_combined.csv (combined hotel data)")
     print("   ✅ Data/toronto_unified_hotel_analysis.csv (unified with spatial features)")
     print("\n🎯 Next steps:")
     print("   1. Run data_transformation.py for ML-ready dataset")

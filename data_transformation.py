@@ -188,6 +188,58 @@ class HotelDataPipeline:
                 df[col] = pd.to_datetime(df[col], errors='coerce')
                 print(f"   📅 Converted {col} to datetime")
         
+        # Fill empty Number of People column with default value of 2
+        if 'Number of People' in df.columns:
+            df['Number of People'] = df['Number of People'].fillna(2)
+            filled_count = df['Number of People'].isna().sum()
+            print(f"   👥 Set default value 2 for empty 'Number of People' entries")
+        
+        # Remove data quality anomalies - identified during EDA
+        print("   🚨 Removing data quality anomalies...")
+        initial_rows = len(df)
+        
+        # Remove "scarborough home" anomalies - pricing 6x higher than market rate
+        if 'Hotel name' in df.columns:
+            anomaly_mask = df['Hotel name'].str.lower() == 'scarborough home'
+            anomaly_count = anomaly_mask.sum()
+            
+            if anomaly_count > 0:
+                df = df[~anomaly_mask].copy()
+                print(f"   ✅ Removed {anomaly_count} 'scarborough home' pricing anomalies")
+                print(f"     • These were outliers: $1,574-$1,580 for basic rooms in Scarborough")
+                print(f"     • 6x higher than other Scarborough properties ($74-$334 range)")
+        
+        # Additional anomaly detection - extreme price outliers
+        if 'price_usd' in df.columns:
+            # Remove prices beyond reasonable hotel ranges (likely data errors)
+            price_data = df['price_usd'].dropna()
+            
+            if len(price_data) > 0:
+                # Define reasonable hotel price bounds for Toronto (conservative)
+                min_reasonable_price = 25   # Hostel bed minimum
+                max_reasonable_price = 2000  # Luxury suite maximum
+                
+                price_outliers = ((df['price_usd'] < min_reasonable_price) | 
+                                (df['price_usd'] > max_reasonable_price)) & df['price_usd'].notna()
+                outlier_count = price_outliers.sum()
+                
+                if outlier_count > 0:
+                    # Log the outliers before removing
+                    outlier_data = df.loc[price_outliers, ['Hotel name', 'price_usd', 'Room Type']].head(5)
+                    print(f"   ⚠️ Found {outlier_count} extreme price outliers:")
+                    for _, row in outlier_data.iterrows():
+                        hotel_name = str(row['Hotel name'])[:30] if pd.notna(row['Hotel name']) else 'Unknown'
+                        room_type = str(row['Room Type'])[:20] if pd.notna(row['Room Type']) else 'Unknown'
+                        print(f"     • {hotel_name}: ${row['price_usd']:.2f} ({room_type})")
+                    
+                    df = df[~price_outliers].copy()
+                    print(f"   ✅ Removed {outlier_count} extreme price outliers")
+        
+        cleaned_rows = len(df)
+        total_removed = initial_rows - cleaned_rows
+        if total_removed > 0:
+            print(f"   📊 Data quality cleaning: {initial_rows:,} → {cleaned_rows:,} rows ({total_removed} removed)")
+        
         # Convert numeric columns
         numeric_columns = {
             'Number of People': 'int64',
