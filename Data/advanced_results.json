@@ -1,0 +1,270 @@
+{
+  "advanced_comparison": [
+    {
+      "Model": "Random Forest",
+      "Train_RMSE_CAD": 132.65557381342822,
+      "Val_RMSE_CAD": 136.09992395136044,
+      "Train_MAPE_%": 21.274786917313364,
+      "Val_MAPE_%": 21.290831177132105,
+      "Train_R2": 0.5289882329630005,
+      "Val_R2": 0.5100275655549564,
+      "Overfit_Score": 0.01896066740804403,
+      "Model_Type": "Baseline"
+    },
+    {
+      "Model": "Enhanced Random Forest",
+      "Train_RMSE_CAD": 129.4495065205895,
+      "Val_RMSE_CAD": 138.6745558114376,
+      "Train_MAPE_%": 20.253359336443992,
+      "Val_MAPE_%": 21.646798697704646,
+      "Train_R2": 0.5514802717847882,
+      "Val_R2": 0.4913143932713355,
+      "Overfit_Score": 0.060165878513452675,
+      "Model_Type": "Advanced"
+    },
+    {
+      "Model": "Linear Regression",
+      "Train_RMSE_CAD": 165.9732597288581,
+      "Val_RMSE_CAD": 168.34460355215157,
+      "Train_MAPE_%": 33.487493567808244,
+      "Val_MAPE_%": 33.194332469100885,
+      "Train_R2": 0.26267832798319,
+      "Val_R2": 0.2503573608560088,
+      "Overfit_Score": 0.012320967127181226,
+      "Model_Type": "Baseline"
+    },
+    {
+      "Model": "Ridge Regression",
+      "Train_RMSE_CAD": 165.97512772380884,
+      "Val_RMSE_CAD": 168.34589666535663,
+      "Train_MAPE_%": 33.48766015206772,
+      "Val_MAPE_%": 33.19422200204328,
+      "Train_R2": 0.26266173108181756,
+      "Val_R2": 0.25034584428228635,
+      "Overfit_Score": 0.012315886799531217,
+      "Model_Type": "Baseline"
+    },
+    {
+      "Model": "ElasticNet Regression",
+      "Train_RMSE_CAD": 185.95490656780171,
+      "Val_RMSE_CAD": 187.3564862297971,
+      "Train_MAPE_%": 43.05409867104325,
+      "Val_MAPE_%": 42.45303572282801,
+      "Train_R2": 0.0744582030020009,
+      "Val_R2": 0.07147554127345723,
+      "Overfit_Score": 0.0029826617285436674,
+      "Model_Type": "Baseline"
+    },
+    {
+      "Model": "Lasso Regression",
+      "Train_RMSE_CAD": 188.58296283143454,
+      "Val_RMSE_CAD": 189.97783974078897,
+      "Train_MAPE_%": 44.245378785136396,
+      "Val_MAPE_%": 43.60400776606241,
+      "Train_R2": 0.04811241782327402,
+      "Val_R2": 0.045311321395598125,
+      "Overfit_Score": 0.0028010964276758976,
+      "Model_Type": "Baseline"
+    }
+  ],
+  "feature_columns": [
+    "Distance from attraction",
+    "district",
+    "latitude",
+    "longitude",
+    "district_simple",
+    "distance_category",
+    "booking_lead_time",
+    "length_of_stay",
+    "lead_time_category",
+    "stay_category",
+    "room_category",
+    "Number of People",
+    "is_weekend",
+    "is_holiday",
+    "week_of_year",
+    "weekend_holiday",
+    "checkin_month",
+    "checkin_day_of_week",
+    "checkin_quarter",
+    "events_total_score",
+    "events_max_score",
+    "events_count",
+    "has_major_event",
+    "has_multiple_events",
+    "event_intensity",
+    "MEAN_TEMPERATURE",
+    "temp_category"
+  ],
+  "categorical_features": [
+    "district",
+    "district_simple",
+    "distance_category",
+    "lead_time_category",
+    "stay_category",
+    "room_category",
+    "weekend_holiday",
+    "event_intensity",
+    "temp_category"
+  ],
+  "numerical_features": [
+    "Distance from attraction",
+    "latitude",
+    "longitude",
+    "booking_lead_time",
+    "length_of_stay",
+    "Number of People",
+    "is_weekend",
+    "is_holiday",
+    "week_of_year",
+    "checkin_month",
+    "checkin_day_of_week",
+    "checkin_quarter",
+    "events_total_score",
+    "events_max_score",
+    "events_count",
+    "has_major_event",
+    "has_multiple_events",
+    "MEAN_TEMPERATURE"
+  ],
+  "available_models": [],
+  "feature_importance": {
+    "enhanced_rf": [
+      {
+        "feature": "Distance from attraction",
+        "importance": 0.38871582656763115,
+        "model": "Enhanced Random Forest"
+      },
+      {
+        "feature": "room_category",
+        "importance": 0.3272414835111056,
+        "model": "Enhanced Random Forest"
+      },
+      {
+        "feature": "distance_category",
+        "importance": 0.09495532232539694,
+        "model": "Enhanced Random Forest"
+      },
+      {
+        "feature": "MEAN_TEMPERATURE",
+        "importance": 0.033769565535811806,
+        "model": "Enhanced Random Forest"
+      },
+      {
+        "feature": "latitude",
+        "importance": 0.03289134913325232,
+        "model": "Enhanced Random Forest"
+      },
+      {
+        "feature": "longitude",
+        "importance": 0.0272781066130341,
+        "model": "Enhanced Random Forest"
+      },
+      {
+        "feature": "district",
+        "importance": 0.02454620990472746,
+        "model": "Enhanced Random Forest"
+      },
+      {
+        "feature": "booking_lead_time",
+        "importance": 0.020391136398124923,
+        "model": "Enhanced Random Forest"
+      },
+      {
+        "feature": "district_simple",
+        "importance": 0.01669050622148549,
+        "model": "Enhanced Random Forest"
+      },
+      {
+        "feature": "events_max_score",
+        "importance": 0.006291521273466047,
+        "model": "Enhanced Random Forest"
+      },
+      {
+        "feature": "has_major_event",
+        "importance": 0.003903669367919523,
+        "model": "Enhanced Random Forest"
+      },
+      {
+        "feature": "is_weekend",
+        "importance": 0.003679844013347232,
+        "model": "Enhanced Random Forest"
+      },
+      {
+        "feature": "events_total_score",
+        "importance": 0.0031890010824215972,
+        "model": "Enhanced Random Forest"
+      },
+      {
+        "feature": "is_holiday",
+        "importance": 0.002982836347182757,
+        "model": "Enhanced Random Forest"
+      },
+      {
+        "feature": "lead_time_category",
+        "importance": 0.0028250629195908012,
+        "model": "Enhanced Random Forest"
+      },
+      {
+        "feature": "checkin_month",
+        "importance": 0.0026280602970325836,
+        "model": "Enhanced Random Forest"
+      },
+      {
+        "feature": "events_count",
+        "importance": 0.001963301285183557,
+        "model": "Enhanced Random Forest"
+      },
+      {
+        "feature": "checkin_day_of_week",
+        "importance": 0.0016649213864925049,
+        "model": "Enhanced Random Forest"
+      },
+      {
+        "feature": "weekend_holiday",
+        "importance": 0.0016403235206693145,
+        "model": "Enhanced Random Forest"
+      },
+      {
+        "feature": "checkin_quarter",
+        "importance": 0.0016100208510747083,
+        "model": "Enhanced Random Forest"
+      },
+      {
+        "feature": "temp_category",
+        "importance": 0.001141931445049513,
+        "model": "Enhanced Random Forest"
+      },
+      {
+        "feature": "stay_category",
+        "importance": 0.0,
+        "model": "Enhanced Random Forest"
+      },
+      {
+        "feature": "length_of_stay",
+        "importance": 0.0,
+        "model": "Enhanced Random Forest"
+      },
+      {
+        "feature": "Number of People",
+        "importance": 0.0,
+        "model": "Enhanced Random Forest"
+      },
+      {
+        "feature": "week_of_year",
+        "importance": 0.0,
+        "model": "Enhanced Random Forest"
+      },
+      {
+        "feature": "event_intensity",
+        "importance": 0.0,
+        "model": "Enhanced Random Forest"
+      },
+      {
+        "feature": "has_multiple_events",
+        "importance": 0.0,
+        "model": "Enhanced Random Forest"
+      }
+    ]
+  }
+}

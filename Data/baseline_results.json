@@ -1,0 +1,322 @@
+{
+  "comparison": [
+    {
+      "Model": "Random Forest",
+      "Train_RMSE_CAD": 132.65557381342822,
+      "Val_RMSE_CAD": 136.09992395136044,
+      "Train_MAPE_%": 21.274786917313364,
+      "Val_MAPE_%": 21.290831177132105,
+      "Train_R2": 0.5289882329630005,
+      "Val_R2": 0.5100275655549564,
+      "Overfit_Score": 0.01896066740804403
+    },
+    {
+      "Model": "Linear Regression",
+      "Train_RMSE_CAD": 165.9732597288581,
+      "Val_RMSE_CAD": 168.34460355215157,
+      "Train_MAPE_%": 33.487493567808244,
+      "Val_MAPE_%": 33.194332469100885,
+      "Train_R2": 0.26267832798319,
+      "Val_R2": 0.2503573608560088,
+      "Overfit_Score": 0.012320967127181226
+    },
+    {
+      "Model": "Ridge Regression",
+      "Train_RMSE_CAD": 165.97512772380884,
+      "Val_RMSE_CAD": 168.34589666535663,
+      "Train_MAPE_%": 33.48766015206772,
+      "Val_MAPE_%": 33.19422200204328,
+      "Train_R2": 0.26266173108181756,
+      "Val_R2": 0.25034584428228635,
+      "Overfit_Score": 0.012315886799531217
+    },
+    {
+      "Model": "ElasticNet Regression",
+      "Train_RMSE_CAD": 185.95490656780171,
+      "Val_RMSE_CAD": 187.3564862297971,
+      "Train_MAPE_%": 43.05409867104325,
+      "Val_MAPE_%": 42.45303572282801,
+      "Train_R2": 0.0744582030020009,
+      "Val_R2": 0.07147554127345723,
+      "Overfit_Score": 0.0029826617285436674
+    },
+    {
+      "Model": "Lasso Regression",
+      "Train_RMSE_CAD": 188.58296283143454,
+      "Val_RMSE_CAD": 189.97783974078897,
+      "Train_MAPE_%": 44.245378785136396,
+      "Val_MAPE_%": 43.60400776606241,
+      "Train_R2": 0.04811241782327402,
+      "Val_R2": 0.045311321395598125,
+      "Overfit_Score": 0.0028010964276758976
+    }
+  ],
+  "feature_columns": [
+    "Distance from attraction",
+    "district",
+    "latitude",
+    "longitude",
+    "district_simple",
+    "distance_category",
+    "booking_lead_time",
+    "length_of_stay",
+    "lead_time_category",
+    "stay_category",
+    "room_category",
+    "Number of People",
+    "is_weekend",
+    "is_holiday",
+    "week_of_year",
+    "weekend_holiday",
+    "checkin_month",
+    "checkin_day_of_week",
+    "checkin_quarter",
+    "events_total_score",
+    "events_max_score",
+    "events_count",
+    "has_major_event",
+    "has_multiple_events",
+    "event_intensity",
+    "MEAN_TEMPERATURE",
+    "temp_category"
+  ],
+  "cross_validation": {
+    "random_forest": {
+      "mean_cv_score": 0.6582583863605614,
+      "std_cv_score": 0.001798806037371532,
+      "cv_scores": "[0.65990115 0.65575488 0.65911913]"
+    },
+    "linear_regression": {
+      "mean_cv_score": 0.4230704065270472,
+      "std_cv_score": 0.0005571273798136102,
+      "cv_scores": "[0.42229099 0.42336025 0.42355997]"
+    },
+    "ridge_regression": {
+      "mean_cv_score": 0.4230717067387033,
+      "std_cv_score": 0.0005557068219282386,
+      "cv_scores": "[0.42229439 0.42336015 0.42356059]"
+    }
+  },
+  "feature_importance": [
+    {
+      "feature": "num__Distance from attraction",
+      "importance": 0.4826344632306483
+    },
+    {
+      "feature": "cat__room_category_Standard Double",
+      "importance": 0.07013471798802744
+    },
+    {
+      "feature": "cat__room_category_Large Apartment",
+      "importance": 0.06419585718913302
+    },
+    {
+      "feature": "cat__room_category_Standard",
+      "importance": 0.05721420642386751
+    },
+    {
+      "feature": "cat__room_category_Economy Room",
+      "importance": 0.03908392490453131
+    },
+    {
+      "feature": "cat__room_category_Standard Room",
+      "importance": 0.027400515445274477
+    },
+    {
+      "feature": "cat__room_category_Two-Bedroom Apartment",
+      "importance": 0.022615339916365752
+    },
+    {
+      "feature": "cat__room_category_Family Room",
+      "importance": 0.02177669232780337
+    },
+    {
+      "feature": "cat__room_category_One-Bedroom Apartment",
+      "importance": 0.021433392318629483
+    },
+    {
+      "feature": "cat__room_category_Suite",
+      "importance": 0.021253414919486537
+    },
+    {
+      "feature": "cat__is_holiday_True",
+      "importance": 0.017792427362306858
+    },
+    {
+      "feature": "cat__room_category_Standard King",
+      "importance": 0.017189322320237354
+    },
+    {
+      "feature": "num__longitude",
+      "importance": 0.015523632248882768
+    },
+    {
+      "feature": "cat__room_category_Deluxe Room",
+      "importance": 0.014412035265860698
+    },
+    {
+      "feature": "num__booking_lead_time",
+      "importance": 0.014041707321165922
+    },
+    {
+      "feature": "cat__room_category_Standard Queen",
+      "importance": 0.01390535666839244
+    },
+    {
+      "feature": "cat__distance_category_moderate",
+      "importance": 0.010865302466987182
+    },
+    {
+      "feature": "cat__lead_time_category_week",
+      "importance": 0.00804123758640513
+    },
+    {
+      "feature": "num__MEAN_TEMPERATURE",
+      "importance": 0.007980502009718886
+    },
+    {
+      "feature": "cat__distance_category_far",
+      "importance": 0.006739174896731641
+    },
+    {
+      "feature": "num__events_max_score",
+      "importance": 0.0065847553223640255
+    },
+    {
+      "feature": "cat__room_category_Apartment",
+      "importance": 0.006531259465286592
+    },
+    {
+      "feature": "num__latitude",
+      "importance": 0.006133507148780893
+    },
+    {
+      "feature": "cat__room_category_Studio",
+      "importance": 0.005969407246083353
+    },
+    {
+      "feature": "cat__has_major_event_True",
+      "importance": 0.0058588939831766135
+    },
+    {
+      "feature": "cat__district_simple_Yonge - Dundas",
+      "importance": 0.0033232753249947153
+    },
+    {
+      "feature": "cat__district_Yonge - Dundas",
+      "importance": 0.0031559981814681796
+    },
+    {
+      "feature": "cat__district_Financial District",
+      "importance": 0.0021365215148929913
+    },
+    {
+      "feature": "num__checkin_month",
+      "importance": 0.00124356366975439
+    },
+    {
+      "feature": "num__checkin_quarter",
+      "importance": 0.0011030740662000083
+    },
+    {
+      "feature": "cat__distance_category_very_close",
+      "importance": 0.0009031453025901249
+    },
+    {
+      "feature": "cat__district_Queen West",
+      "importance": 0.0006584668430211484
+    },
+    {
+      "feature": "cat__district_Bloor-Yorkville",
+      "importance": 0.000364350140924842
+    },
+    {
+      "feature": "cat__district_simple_other",
+      "importance": 0.00032513894302156024
+    },
+    {
+      "feature": "cat__distance_category_nearby",
+      "importance": 0.0002629495213885966
+    },
+    {
+      "feature": "cat__district_Scarborough",
+      "importance": 0.00016871922802956315
+    },
+    {
+      "feature": "cat__district_Harbourfront",
+      "importance": 0.0001627144792562219
+    },
+    {
+      "feature": "cat__district_simple_Bloor-Yorkville",
+      "importance": 0.0001477092565309245
+    },
+    {
+      "feature": "cat__district_Entertainment District",
+      "importance": 0.00014458116472312784
+    },
+    {
+      "feature": "cat__district_North York",
+      "importance": 0.00012238269657224415
+    },
+    {
+      "feature": "cat__district_simple_North York",
+      "importance": 8.991157197590508e-05
+    },
+    {
+      "feature": "cat__district_The Beaches",
+      "importance": 7.874567790297146e-05
+    },
+    {
+      "feature": "cat__temp_category_mild",
+      "importance": 7.500837076610429e-05
+    },
+    {
+      "feature": "cat__weekend_holiday_True_False",
+      "importance": 3.5518603304689254e-05
+    },
+    {
+      "feature": "cat__temp_category_warm",
+      "importance": 2.9173167505979478e-05
+    },
+    {
+      "feature": "num__events_count",
+      "importance": 2.7513282236352208e-05
+    },
+    {
+      "feature": "num__events_total_score",
+      "importance": 2.6321321679175404e-05
+    },
+    {
+      "feature": "num__checkin_day_of_week",
+      "importance": 2.5333078169689952e-05
+    },
+    {
+      "feature": "cat__district_King Street West",
+      "importance": 2.4642532502889218e-05
+    },
+    {
+      "feature": "cat__room_category_Junior Suite",
+      "importance": 1.8619877219435003e-05
+    },
+    {
+      "feature": "cat__district_simple_Entertainment District",
+      "importance": 1.840837676041267e-05
+    },
+    {
+      "feature": "cat__is_weekend_True",
+      "importance": 1.7167830459996262e-05
+    },
+    {
+      "feature": "num__Number of People",
+      "importance": 0.0
+    },
+    {
+      "feature": "num__week_of_year",
+      "importance": 0.0
+    },
+    {
+      "feature": "num__length_of_stay",
+      "importance": 0.0
+    }
+  ]
+}

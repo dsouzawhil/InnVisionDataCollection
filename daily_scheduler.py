@@ -15,7 +15,6 @@ async def run_daily_scrape():
     
     # List of check-in and check-out date combinations
     date_combinations = [
-        ("2025-10-10", "2025-10-13"),
         ("2025-10-13", "2025-10-15"),
         ("2025-10-15", "2025-10-17")
 

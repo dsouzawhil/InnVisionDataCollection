@@ -148,14 +148,6 @@ class HotelDataPipeline:
         original_cols = len(df.columns)
         original_rows = len(df)
         
-        # Clean Distance from attraction column - remove 'miles from downtown' text
-        if 'Distance from attraction' in df.columns:
-            print("   🧹 Cleaning Distance from attraction column...")
-            # Extract numeric values from distance column, remove 'miles from downtown'
-            df['Distance from attraction'] = df['Distance from attraction'].astype(str).str.extract(r'([\d\.]+)')[0]
-            df['Distance from attraction'] = pd.to_numeric(df['Distance from attraction'], errors='coerce')
-            print("   ✅ Removed 'miles from downtown' text from Distance column")
-        
         # Clean price column - remove $ sign and keep only numeric values
         price_columns = ['Price', 'price', 'price_usd']
         for price_col in price_columns:
@@ -173,13 +165,41 @@ class HotelDataPipeline:
                     df = df.rename(columns={price_col: 'price_usd'})
                     print(f"   🔄 Renamed {price_col} to price_usd")
         
-        # Remove duplicate 'Distance from Attraction' column if exists
-        if 'Distance from Attraction' in df.columns:
-            distance_cols = [col for col in df.columns if 'Distance from Attraction' in col]
-            if len(distance_cols) > 1:
-                for i in range(1, len(distance_cols)):
-                    df = df.drop(columns=[distance_cols[i]])
-                print(f"   🧹 Removed duplicate 'Distance from Attraction' columns")
+        # Remove duplicate distance columns (case-insensitive)
+        distance_cols = [col for col in df.columns if 'distance' in col.lower() and 'attraction' in col.lower()]
+        
+        if len(distance_cols) > 1:
+            print(f"   🔍 Found {len(distance_cols)} distance columns: {distance_cols}")
+            
+            # Prioritize the column with better coverage
+            coverage_stats = {}
+            for col in distance_cols:
+                non_null_count = df[col].notna().sum()
+                coverage_pct = (non_null_count / len(df)) * 100
+                coverage_stats[col] = (non_null_count, coverage_pct)
+                print(f"     • '{col}': {non_null_count:,} values ({coverage_pct:.1f}% coverage)")
+            
+            # Keep the column with highest coverage, remove others
+            best_col = max(coverage_stats.keys(), key=lambda x: coverage_stats[x][0])
+            cols_to_remove = [col for col in distance_cols if col != best_col]
+            
+            if cols_to_remove:
+                df = df.drop(columns=cols_to_remove)
+                print(f"   ✅ Kept '{best_col}' (best coverage)")
+                print(f"   🗑️ Removed {len(cols_to_remove)} duplicate columns: {cols_to_remove}")
+                
+                # Rename to standardized name if needed
+                if best_col != 'Distance from attraction':
+                    df = df.rename(columns={best_col: 'Distance from attraction'})
+                    print(f"   🔄 Renamed '{best_col}' → 'Distance from attraction'")
+        
+        # Clean Distance from attraction column - remove 'miles from downtown' text
+        if 'Distance from attraction' in df.columns:
+            print("   🧹 Cleaning Distance from attraction column...")
+            # Extract numeric values from distance column, remove 'miles from downtown'
+            df['Distance from attraction'] = df['Distance from attraction'].astype(str).str.extract(r'([\d\.]+)')[0]
+            df['Distance from attraction'] = pd.to_numeric(df['Distance from attraction'], errors='coerce')
+            print("   ✅ Removed 'miles from downtown' text from Distance column")
         
         # Convert date columns to datetime
         date_columns = ['Date', 'Check-in Date', 'Check-out Date']
@@ -842,7 +862,7 @@ class HotelDataPipeline:
         essential_columns = [
             'Hotel name', 'price_usd', 'price_cad', 'Check-in Date', 'Check-out Date',
             'district', 'latitude', 'longitude', 'room_category', 'is_weekend', 
-            'is_holiday', 'booking_lead_time', 'length_of_stay'
+            'is_holiday', 'booking_lead_time', 'length_of_stay', 'Distance from attraction'
         ]
         
         for col in df.columns:
